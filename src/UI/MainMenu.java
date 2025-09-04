@@ -4,6 +4,7 @@
  */
 package UI;
 
+import java.awt.CardLayout;
 import javax.swing.*;
 
 /**
@@ -17,6 +18,16 @@ public class MainMenu extends javax.swing.JFrame {
      */
     public MainMenu() {
         initComponents();
+        
+        // Initialise card layout
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        
+        // Add JPanels to cards
+        Parent.add(menu, "menu");
+        Parent.add(instructions, "instructions");
+        
+        // Show menu panel at start up
+        menuCard.show(Parent, "menu");
     }
 
     /**
@@ -28,116 +39,186 @@ public class MainMenu extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel1 = new javax.swing.JPanel();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
+        Parent = new javax.swing.JPanel();
+        menu = new javax.swing.JPanel();
+        logo = new javax.swing.JLabel();
+        navigation = new javax.swing.JPanel();
+        startButton = new javax.swing.JButton();
+        instructionsButton = new javax.swing.JButton();
+        scoreButton = new javax.swing.JButton();
+        logButton = new javax.swing.JButton();
+        exitButton = new javax.swing.JButton();
+        instructions = new javax.swing.JPanel();
+        instructionsHeader = new javax.swing.JLabel();
+        instructionsText = new javax.swing.JTextArea();
+        exitButton_Instructions = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(854, 480));
+        setResizable(false);
+        setSize(new java.awt.Dimension(854, 480));
 
-        jButton1.setLabel("Start Game");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        Parent.setLayout(new java.awt.CardLayout());
+
+        logo.setIcon(new javax.swing.ImageIcon("P:\\Users\\danie\\Documents\\NetBeansProjects\\ENSE600-Assign2-SkipBo\\SkipBo_CardGame_GUI\\img\\logo.png")); // NOI18N
+
+        startButton.setLabel("Start Game");
+        startButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                startButtonActionPerformed(evt);
             }
         });
 
-        jButton2.setLabel("Instructions");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        instructionsButton.setLabel("Instructions");
+        instructionsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                instructionsButtonActionPerformed(evt);
             }
         });
 
-        jButton3.setLabel("Score Board");
+        scoreButton.setLabel("Score Board");
 
-        jButton4.setLabel("Game Logs");
+        logButton.setLabel("Game Logs");
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        javax.swing.GroupLayout navigationLayout = new javax.swing.GroupLayout(navigation);
+        navigation.setLayout(navigationLayout);
+        navigationLayout.setHorizontalGroup(
+            navigationLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(navigationLayout.createSequentialGroup()
                 .addGap(0, 0, 0)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, 113, Short.MAX_VALUE)
-                    .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGroup(navigationLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(instructionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(scoreButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(logButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(startButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        navigationLayout.setVerticalGroup(
+            navigationLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(navigationLayout.createSequentialGroup()
                 .addGap(0, 0, 0)
-                .addComponent(jButton1)
+                .addComponent(startButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton2)
+                .addComponent(instructionsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton3)
+                .addComponent(scoreButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jButton4))
+                .addComponent(logButton))
         );
 
-        jButton5.setBackground(new java.awt.Color(255, 51, 51));
-        jButton5.setLabel("X");
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
+        exitButton.setBackground(new java.awt.Color(255, 51, 51));
+        exitButton.setLabel("X");
+        exitButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton5ActionPerformed(evt);
+                exitButtonActionPerformed(evt);
             }
         });
 
-        jLabel1.setIcon(new javax.swing.ImageIcon("P:\\Users\\danie\\Documents\\NetBeansProjects\\ENSE600-Assign2-SkipBo\\SkipBo_CardGame_GUI\\img\\logo.png")); // NOI18N
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap(277, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButton5))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 272, Short.MAX_VALUE)))
-                .addContainerGap())
-            .addGroup(layout.createSequentialGroup()
+        javax.swing.GroupLayout menuLayout = new javax.swing.GroupLayout(menu);
+        menu.setLayout(menuLayout);
+        menuLayout.setHorizontalGroup(
+            menuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(menuLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel1)
+                .addComponent(navigation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(menuLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(exitButton)
+                .addContainerGap())
+            .addGroup(menuLayout.createSequentialGroup()
+                .addContainerGap(264, Short.MAX_VALUE)
+                .addComponent(logo)
+                .addContainerGap(267, Short.MAX_VALUE))
+        );
+        menuLayout.setVerticalGroup(
+            menuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(menuLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(exitButton)
+                .addGap(12, 12, 12)
+                .addComponent(logo)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(navigation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(93, Short.MAX_VALUE))
+        );
+
+        Parent.add(menu, "card2");
+
+        instructionsHeader.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        instructionsHeader.setText("Instructions");
+
+        instructionsText.setEditable(false);
+        instructionsText.setColumns(20);
+        instructionsText.setLineWrap(true);
+        instructionsText.setRows(5);
+        instructionsText.setText("Objective:\nBe the first player to play all the cards in your STOCK pile.\n\nHow To Play:\nUsing your HAND, DISCARD, and STOCK pile, play cards to the BUILD pile.\n\nWhatever card played to a BUILD pile must be the next sequential number.\n\nYour DISCARD piles can be built in any order.\n\nYou can play from your DISCARD pile as many times as you like during your turn.\n\nPlaying your HAND to your DISCARD pile ends your turn.\n\nIf you use up all cards in your HAND during your turn, you replenish your HAND and keep playing.\n\nWildcards (0) can be played as any number 1 through 12.");
+        instructionsText.setWrapStyleWord(true);
+        instructionsText.setFocusable(false);
+
+        exitButton_Instructions.setBackground(new java.awt.Color(255, 51, 51));
+        exitButton_Instructions.setLabel("X");
+        exitButton_Instructions.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exitButton_InstructionsActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout instructionsLayout = new javax.swing.GroupLayout(instructions);
+        instructions.setLayout(instructionsLayout);
+        instructionsLayout.setHorizontalGroup(
+            instructionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(instructionsLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(exitButton_Instructions)
+                .addContainerGap())
+            .addGroup(instructionsLayout.createSequentialGroup()
+                .addGap(0, 168, Short.MAX_VALUE)
+                .addComponent(instructionsText, javax.swing.GroupLayout.PREFERRED_SIZE, 449, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(173, Short.MAX_VALUE))
+            .addGroup(instructionsLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(instructionsHeader)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+        instructionsLayout.setVerticalGroup(
+            instructionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(instructionsLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jButton5)
-                .addGap(0, 0, 0)
-                .addComponent(jLabel1)
-                .addGap(49, 49, 49)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(144, Short.MAX_VALUE))
+                .addComponent(exitButton_Instructions)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(instructionsHeader)
+                .addGap(18, 18, 18)
+                .addComponent(instructionsText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(107, Short.MAX_VALUE))
         );
+
+        Parent.add(instructions, "card3");
+
+        getContentPane().add(Parent, java.awt.BorderLayout.CENTER);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+    private void exitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButtonActionPerformed
         // TODO add your handling code here:
         System.exit(0);
-    }//GEN-LAST:event_jButton5ActionPerformed
+    }//GEN-LAST:event_exitButtonActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+    private void instructionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_instructionsButtonActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton2ActionPerformed
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        menuCard.show(Parent, "instructions");
+    }//GEN-LAST:event_instructionsButtonActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startButtonActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_startButtonActionPerformed
+
+    private void exitButton_InstructionsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButton_InstructionsActionPerformed
+        // TODO add your handling code here:
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        menuCard.show(Parent, "menu");
+    }//GEN-LAST:event_exitButton_InstructionsActionPerformed
 
     /**
      * @param args the command line arguments
@@ -175,12 +256,18 @@ public class MainMenu extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel Parent;
+    private javax.swing.JButton exitButton;
+    private javax.swing.JButton exitButton_Instructions;
+    private javax.swing.JPanel instructions;
+    private javax.swing.JButton instructionsButton;
+    private javax.swing.JLabel instructionsHeader;
+    private javax.swing.JTextArea instructionsText;
+    private javax.swing.JButton logButton;
+    private javax.swing.JLabel logo;
+    private javax.swing.JPanel menu;
+    private javax.swing.JPanel navigation;
+    private javax.swing.JButton scoreButton;
+    private javax.swing.JButton startButton;
     // End of variables declaration//GEN-END:variables
 }
