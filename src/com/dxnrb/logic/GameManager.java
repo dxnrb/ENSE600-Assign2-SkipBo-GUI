@@ -9,6 +9,7 @@ import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.DrawPile;
 import com.dxnrb.logic.players.Player;
 import java.util.ArrayList;
+import javax.swing.JButton;
 
 /**
  *
@@ -19,24 +20,54 @@ public class GameManager {
     private int playerCount = 2;
     
     private ArrayList<Player> players = new ArrayList<>();
-    private int currentPlayerIndex = 0;
+    private int currentPlayerIndex = -1; // Initialized. nextTurn() method increments to 0 (starting index of player ArrayList)
     
+    // List of buildingPile objects where each list index is a building pile slot on the game's table
     private ArrayList<BuildingPile> buildingPile = new ArrayList<>();
     
+    // Constructor of draw pile initializes all cards in the game's deck.
     private DrawPile drawPile = new DrawPile();
     
     public GameManager(ArrayList<String> players, int gameID) {
         this.playerCount = players.size();
         this.gameID = gameID;
         
+        // Shuffle draw pile
+        this.drawPile.shuffle();
+        
+        // Initialize players
         for (String name : players) {
             Player p = new Player(name);
             this.players.add(p);
         }
-    }
-    
-    public void initializeGame() {
-        this.drawPile.shuffle();
+        
+        // Distribute cards to players stock piles
+        if (this.playerCount <= 4) // 2 to 4 players get 30 cards in Stock Pile
+        {
+            for (int i = 0; i < 30; i++)
+            {
+                for (Player player : this.players)
+                {
+                    player.addToStockPile(this.drawPile.drawCard());
+                }
+            }
+        }
+        if (this.playerCount >= 5) // 5 to 6 players get 20 cards in Stock Pile
+        {
+            for (int i = 0; i < 20; i++)
+            {
+                for (Player player : this.players)
+                {
+                    player.addToStockPile(this.drawPile.drawCard());
+                }
+            }
+        }
+        
+        // Distribute cards to players hands
+        for (Player player : this.players)
+        {
+            player.fillHand(drawPile);
+        }
         
         // Create building pile for game instance
         for (int i = 0; i < 4; i++)
@@ -44,9 +75,11 @@ public class GameManager {
             BuildingPile pile = new BuildingPile();
             this.buildingPile.add(pile);
         }
+        
+        nextTurn(); // Initialize player 1's turn
     }
     
-    public Card getDrawPile() { // TEsting
+    public Card getDrawPile() { // Testing
         return drawPile.drawCard();
     }
     
@@ -64,5 +97,13 @@ public class GameManager {
     
     public ArrayList<BuildingPile> getBuildPile() {
         return this.buildingPile;
+    }
+    
+    
+    // Check card can be played
+    private boolean playCard(JButton card, JButton pile) {
+        // When you get back, need to find the card object related to the JButton
+        // Use BuildingPile class logic and old TurnManager logic to check card can be played and remove from player hand etc
+        return false;
     }
 }

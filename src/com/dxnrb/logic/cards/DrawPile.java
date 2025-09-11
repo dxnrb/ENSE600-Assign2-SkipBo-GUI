@@ -50,6 +50,6 @@ public class DrawPile extends Pile implements CardRemovable, CardShufflable, Car
     
     @Override
     public Card drawCard() {
-        return shoe.remove(0);
+        return shoe.removeFirst();
     }
 }

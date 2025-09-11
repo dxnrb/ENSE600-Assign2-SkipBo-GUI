@@ -426,7 +426,16 @@ public class MainMenu extends javax.swing.JFrame {
 
     private void exitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButtonActionPerformed
         // TODO add your handling code here:
-        System.exit(0);
+        int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to end the game?", "Confirm Action", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.YES_OPTION)
+        {
+            System.exit(0);
+        }
+        else if (choice == JOptionPane.NO_OPTION)
+        {
+            return;
+        }
+        
     }//GEN-LAST:event_exitButtonActionPerformed
 
     private void instructionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_instructionsButtonActionPerformed
@@ -479,7 +488,7 @@ public class MainMenu extends javax.swing.JFrame {
         // Read the player names
         ArrayList<String> names = new ArrayList<>();
         for (int i = 0; i < (int) playerSpinner.getValue(); i++) {
-            names.add(playerFields[i].toString());
+            names.add(playerFields[i].getText());
         }
         // For the new instance of the Game JFrame, pass the list of names so it can create a game manager
         Game gameWindow = new Game(names);

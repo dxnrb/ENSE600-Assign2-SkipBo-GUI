@@ -23,7 +23,7 @@ public class Player {
     private ArrayList<DiscardPile> playerDiscardPile = new ArrayList<>();
     private ArrayList<Card> playerHand = new ArrayList<>();
     
-    public Player(String name) { // Overloaded constructor to rename player
+    public Player(String name) {
         this.name = name;
 
         // Initialise players discard pile 
