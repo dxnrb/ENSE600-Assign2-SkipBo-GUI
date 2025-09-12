@@ -59,33 +59,33 @@ public class Game extends javax.swing.JFrame {
         // Initialize GUI for players hand
         int i = 0;
         for (JButton button : handPiles) {
-            if (gameManager.getCurrentPlayerHand().get(i).equals(null))
+            if (gameManager.getCurrentPlayerHand(i).equals(null))
             {
                 button.setText("Empty");
             }
-            button.setText(Integer.toString(gameManager.getCurrentPlayerHand().get(i++).getCardNumber()));
+            button.setText(Integer.toString(gameManager.getCurrentPlayerHand(i++).getCardNumber()));
         }
         
         // Initialize GUI for players stock pile
-        stockPile.setText(Integer.toString(gameManager.getCurrentPlayer().getStockPile().peek().getCardNumber()));
-        stockPileRemaining.setText("(" + gameManager.getCurrentPlayer().getStockPile().getSize() + ")");
+        stockPile.setText(Integer.toString(gameManager.getCurrentPlayerStockPileCard().getCardNumber()));
+        stockPileRemaining.setText("(" + gameManager.getCurrentPlayerStockPile().getSize() + ")");
         
         // Initialize GUI for players discard pile
         i = 0;
         for (JButton button : discardPiles) {
-            if (gameManager.getCurrentPlayer().getDiscardPileList().get(i).isEmpty()) {
+            if (gameManager.getCurrentPlayerDiscardPile(i).isEmpty()) {
                 button.setText("Empty");
             } else {
-                button.setText(Integer.toString(gameManager.getCurrentPlayer().getDiscardPileList().get(i++).peek().getCardNumber()));
+                button.setText(Integer.toString(gameManager.getCurrentPlayerDiscardPile(i++).peek().getCardNumber()));
             }
         }
         
         i = 0;
         for (JButton button : buildPiles) {
-            if (gameManager.getBuildPile().get(i).isEmpty()) {
+            if (gameManager.getBuildPile(i).isEmpty()) {
                 button.setText("Empty");
             } else {
-                button.setText(Integer.toString(gameManager.getBuildPile().get(i++).peek().getCardNumber()));
+                button.setText(Integer.toString(gameManager.getBuildPile(i++).peek().getCardNumber()));
             }
         }
     }
@@ -742,7 +742,7 @@ public class Game extends javax.swing.JFrame {
 
     private void exitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButtonActionPerformed
         // TODO add your handling code here:
-        int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to end the game?", "Quit", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to end the game?", "End Game", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice == JOptionPane.YES_OPTION) {
             Point location = this.getLocation();
             MainMenu menu = new MainMenu();
@@ -782,7 +782,7 @@ public class Game extends javax.swing.JFrame {
 
     private void handPile5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile5ActionPerformed
         // TODO add your handling code here:
-        selectedButton = handPile4;
+        selectedButton = handPile5;
         selectHAND();
     }//GEN-LAST:event_handPile5ActionPerformed
 
