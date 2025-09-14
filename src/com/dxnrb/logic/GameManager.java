@@ -8,10 +8,12 @@ import com.dxnrb.logic.cards.BuildingPile;
 import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.DiscardPile;
 import com.dxnrb.logic.cards.DrawPile;
+import com.dxnrb.logic.cards.EmptyCard;
+import com.dxnrb.logic.cards.Pile;
 import com.dxnrb.logic.cards.StockPile;
 import com.dxnrb.logic.players.Player;
 import java.util.ArrayList;
-import javax.swing.JButton;
+
 
 /**
  *
@@ -105,23 +107,66 @@ public class GameManager {
     // My first assignment I had a turn manager, but GPT mentioned it is obsolete for the GUI as the "turns" occur with GUI interaction
     public void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
+        getCurrentPlayer().fillHand(drawPile);
+    }
+    
+    public void restockDrawPile() {
+        for (BuildingPile pile : this.buildingPile) {
+            if (pile.isFull()) {
+                for (Card card : pile.getCards()) {
+                    this.drawPile.restockCard(card);
+                }
+                pile.clearPile();
+            }
+        }
     }
     
     // Check card can be played
-    private boolean playCard(JButton card, JButton pile) {
-        // When you get back, need to find the card object related to the JButton
-        // Use BuildingPile class logic and old TurnManager logic to check card can be played and remove from player hand etc
-        
-        // Because I focused on other stuff today, when you get back:
-        // Consider comment above,
-        // Design your card flow and handling by having the GUI send enums to this method
-        // The Game GUI class can send an enum to infer pile, and an int to infer the pile index
-        // This method can then perform the logic to move cards
-        // Look into whether the game GUI responds to this methods return statement to display a JOptionPane error
-        // Else get this method to do it - only reason for considering this is incase there are different error messages,
-        // this method would be the only thing that knows why a card cant be played
+    public boolean playCard(Card card, Pile toPile) {
+        if (toPile instanceof BuildingPile buildingPile) { // If card is being played to build pile
+            if (buildingPile.addCard(card)) {
+                getCurrentPlayer().removeFromPlayerHand(card);
+                restockDrawPile();
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        if (toPile instanceof DiscardPile discardPile) { // If card is being played to discard pile
+            discardPile.addCard(card);
+            getCurrentPlayer().removeFromPlayerHand(card);
+            restockDrawPile();
+            return true;
+        }
         return false;
-    }    
+    }
+    public boolean playCard(Pile fromPile, BuildingPile toPile) { // Overload for playing from stock or discard pile
+        if (fromPile instanceof StockPile stockPile) { // Card being played from stock pile
+            if (toPile.addCard(stockPile.peek())) {
+                getCurrentPlayer().removeFromStockPile();
+                restockDrawPile();
+                return true;
+            }
+            else {
+                return false;
+            }
+        }  
+        if (fromPile instanceof DiscardPile discardPile) { // Card being played from discard pile
+            if (toPile.addCard(discardPile.peek())) {
+                discardPile.drawCard();
+                restockDrawPile();
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    
+    
     
     
     // Current player specific methods //
@@ -136,6 +181,18 @@ public class GameManager {
     
     public Card getCurrentPlayerHand(int i) { // Overloaded to get card in hand
         return this.players.get(currentPlayerIndex).getPlayerHand().get(i);
+    }
+    
+    public void isPlayerHandEmpty() { // Refills hand if ArrayList is empty
+        int i = 0;
+        for (Card card : getCurrentPlayer().getPlayerHand()) {
+            if (card instanceof EmptyCard) {
+                i++;
+            }
+        }
+        if (i == 5) {
+            getCurrentPlayer().fillHand(drawPile);
+        }
     }
     
     // Stock:

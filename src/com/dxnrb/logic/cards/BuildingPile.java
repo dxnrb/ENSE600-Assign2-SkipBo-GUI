@@ -7,7 +7,6 @@ package com.dxnrb.logic.cards;
 import com.dxnrb.logic.interfaces.CardAddable;
 import com.dxnrb.logic.interfaces.CardPeekable;
 import com.dxnrb.logic.interfaces.CardRemovable;
-import java.util.ArrayList;
 
 
 /**
@@ -55,10 +54,16 @@ public class BuildingPile extends Pile implements CardAddable, CardRemovable, Ca
         return shoe.remove(0);
     }
     
-    public ArrayList<Card> clearPile() {
-        ArrayList<Card> pileToClear = this.shoe;
-        this.shoe.removeAll(shoe);
-        return pileToClear;
+    public boolean isFull() {
+        if (this.shoe.size() == 12) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    public void clearPile() {
+        this.shoe.clear();
     }
     
     @Override

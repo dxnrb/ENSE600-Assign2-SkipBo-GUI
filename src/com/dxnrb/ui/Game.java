@@ -5,6 +5,9 @@
 package com.dxnrb.ui;
 
 import com.dxnrb.logic.GameManager;
+import com.dxnrb.logic.cards.Card;
+import com.dxnrb.logic.cards.DiscardPile;
+import com.dxnrb.logic.cards.EmptyCard;
 import java.awt.Point;
 import java.util.ArrayList;
 import javax.swing.*;
@@ -28,7 +31,7 @@ public class Game extends javax.swing.JFrame {
         SELECT_DISCARD
     }
     private PlayerAction currentAction = PlayerAction.NONE;
-    private JButton selectedButton = null;
+    private Card selectedCard = new EmptyCard();
     
     
     
@@ -59,11 +62,15 @@ public class Game extends javax.swing.JFrame {
         // Initialize GUI for players hand
         int i = 0;
         for (JButton button : handPiles) {
-            if (gameManager.getCurrentPlayerHand(i).equals(null))
+            Card card = gameManager.getCurrentPlayerHand(i++);
+            if (card instanceof EmptyCard)
             {
                 button.setText("Empty");
+                button.setEnabled(false);
+            } else {
+                button.setText(Integer.toString(card.getCardNumber()));
+                button.setEnabled(true);
             }
-            button.setText(Integer.toString(gameManager.getCurrentPlayerHand(i++).getCardNumber()));
         }
         
         // Initialize GUI for players stock pile
@@ -75,34 +82,49 @@ public class Game extends javax.swing.JFrame {
         for (JButton button : discardPiles) {
             if (gameManager.getCurrentPlayerDiscardPile(i).isEmpty()) {
                 button.setText("Empty");
+                button.setEnabled(false);
             } else {
-                button.setText(Integer.toString(gameManager.getCurrentPlayerDiscardPile(i++).peek().getCardNumber()));
+                button.setText(Integer.toString(gameManager.getCurrentPlayerDiscardPile(i).peek().getCardNumber()));
+                button.setEnabled(true);
             }
+            i++;
         }
         
+        // Initialize GUI for games build piles
         i = 0;
         for (JButton button : buildPiles) {
             if (gameManager.getBuildPile(i).isEmpty()) {
                 button.setText("Empty");
             } else {
-                button.setText(Integer.toString(gameManager.getBuildPile(i++).peek().getCardNumber()));
+                button.setText(Integer.toString(gameManager.getBuildPile(i).getSize()));
             }
+            i++;
         }
+        
+        currentAction = PlayerAction.NONE;
     }
     
     
     // Methods to control GUI card flow
     private void resetActionState() {
         for (JButton button : handPiles) {
-            button.setEnabled(true);
+            if (button.getText() != "Empty") {
+                button.setEnabled(true);
+            }
         }
         for (JButton button : discardPiles) {
-            button.setEnabled(true);
+            if (button.getText() != "Empty") {
+                button.setEnabled(true);
+            } else {
+                button.setEnabled(false);
+            }
         }
         for (JButton button : buildPiles) {
             button.setEnabled(true);
         }
         stockPile.setEnabled(true);
+        selectedCard = new EmptyCard();
+        currentAction = PlayerAction.NONE;
     }
     private void selectHAND() {
         currentAction = PlayerAction.SELECT_HAND;
@@ -118,7 +140,7 @@ public class Game extends javax.swing.JFrame {
         stockPile.setEnabled(false);
     }
     private void selectSTOCK() {
-        currentAction = PlayerAction.SELECT_HAND;
+        currentAction = PlayerAction.SELECT_STOCK;
         for (JButton button : handPiles) {
             button.setEnabled(false);
         }
@@ -131,7 +153,7 @@ public class Game extends javax.swing.JFrame {
         stockPile.setEnabled(false);
     }
     private void selectDISCARD() {
-        currentAction = PlayerAction.SELECT_HAND;
+        currentAction = PlayerAction.SELECT_DISCARD;
         for (JButton button : handPiles) {
             button.setEnabled(false);
         }
@@ -144,8 +166,55 @@ public class Game extends javax.swing.JFrame {
         stockPile.setEnabled(false);
     }
     
-    
-    
+    private void building(int index) {
+        if (currentAction == PlayerAction.SELECT_HAND) {
+            if (gameManager.playCard(selectedCard, gameManager.getBuildPile(index-1))) {
+                gameManager.isPlayerHandEmpty(); // Refills hand if ArrayList is empty
+                resetActionState();
+                renderNextPlayer();
+            } else {
+                resetActionState();
+                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+        if (currentAction == PlayerAction.SELECT_STOCK) {
+            if (gameManager.playCard(gameManager.getCurrentPlayerStockPile(), gameManager.getBuildPile(index-1))) {
+                resetActionState();
+                renderNextPlayer();
+            } else {
+                resetActionState();
+                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+        if (currentAction == PlayerAction.SELECT_DISCARD) {
+            int i = 0;
+            for (DiscardPile pile : gameManager.getCurrentPlayerDiscardPile()) {
+                if (!pile.isEmpty() && pile.peek().equals(selectedCard)) {
+                    break;
+                }
+                i++;
+            }
+            if (gameManager.playCard(gameManager.getCurrentPlayerDiscardPile(i), gameManager.getBuildPile(index-1))) {
+                resetActionState();
+                renderNextPlayer();
+            } else {
+                resetActionState();
+                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+    }
+    private void discarding(int index) {
+        if (currentAction == PlayerAction.SELECT_HAND) {
+            if (gameManager.playCard(selectedCard, gameManager.getCurrentPlayerDiscardPile(index-1))) {
+                resetActionState();
+                gameManager.nextTurn();
+                renderNextPlayer();
+            }
+        } else {
+            selectedCard = gameManager.getCurrentPlayerDiscardPile(index-1).peek();
+            selectDISCARD();
+        }
+    }
     
     
     
@@ -758,81 +827,78 @@ public class Game extends javax.swing.JFrame {
 
     private void handPile1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile1ActionPerformed
         // TODO add your handling code here:
-        selectedButton = handPile1;
+        selectedCard = gameManager.getCurrentPlayerHand(0);
         selectHAND();
     }//GEN-LAST:event_handPile1ActionPerformed
 
     private void handPile2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile2ActionPerformed
         // TODO add your handling code here:
-        selectedButton = handPile2;
+        selectedCard = gameManager.getCurrentPlayerHand(1);
         selectHAND();
     }//GEN-LAST:event_handPile2ActionPerformed
 
     private void handPile3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile3ActionPerformed
         // TODO add your handling code here:
-        selectedButton = handPile3;
+        selectedCard = gameManager.getCurrentPlayerHand(2);
         selectHAND();
     }//GEN-LAST:event_handPile3ActionPerformed
 
     private void handPile4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile4ActionPerformed
         // TODO add your handling code here:
-        selectedButton = handPile4;
+        selectedCard = gameManager.getCurrentPlayerHand(3);
         selectHAND();
     }//GEN-LAST:event_handPile4ActionPerformed
 
     private void handPile5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile5ActionPerformed
         // TODO add your handling code here:
-        selectedButton = handPile5;
+        selectedCard = gameManager.getCurrentPlayerHand(4);
         selectHAND();
     }//GEN-LAST:event_handPile5ActionPerformed
 
     private void stockPileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stockPileActionPerformed
         // TODO add your handling code here:
-        selectedButton = stockPile;
+        selectedCard = gameManager.getCurrentPlayerStockPileCard();
         selectSTOCK();
     }//GEN-LAST:event_stockPileActionPerformed
 
     private void discardPile1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discardPile1ActionPerformed
         // TODO add your handling code here:
-        selectedButton = discardPile1;
-        selectDISCARD();
+        discarding(1);
     }//GEN-LAST:event_discardPile1ActionPerformed
 
     private void discardPile2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discardPile2ActionPerformed
         // TODO add your handling code here:
-        selectedButton = discardPile2;
-        selectDISCARD();
+        discarding(2);
     }//GEN-LAST:event_discardPile2ActionPerformed
 
     private void discardPile3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discardPile3ActionPerformed
         // TODO add your handling code here:+
-        selectedButton = discardPile3;
-        selectDISCARD();
+        discarding(3);
     }//GEN-LAST:event_discardPile3ActionPerformed
 
     private void discardPile4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discardPile4ActionPerformed
         // TODO add your handling code here:
-        selectedButton = discardPile4;
-        selectDISCARD();
+        discarding(4);
     }//GEN-LAST:event_discardPile4ActionPerformed
 
     private void buildPile1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buildPile1ActionPerformed
         // TODO add your handling code here:
-        if (currentAction == PlayerAction.SELECT_HAND) {
-            // Call new gamemanager method, see comments within that method to continue coding
-        }
+        building(1);
     }//GEN-LAST:event_buildPile1ActionPerformed
 
     private void buildPile2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buildPile2ActionPerformed
         // TODO add your handling code here:
+        building(2);
     }//GEN-LAST:event_buildPile2ActionPerformed
 
     private void buildPile3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buildPile3ActionPerformed
         // TODO add your handling code here:
+        building(3);
     }//GEN-LAST:event_buildPile3ActionPerformed
 
     private void buildPile4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buildPile4ActionPerformed
         // TODO add your handling code here:
+        building(4);
     }//GEN-LAST:event_buildPile4ActionPerformed
 
     private void TableTopMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_TableTopMouseClicked

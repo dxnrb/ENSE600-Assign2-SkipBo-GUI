@@ -19,7 +19,7 @@ public abstract class Pile {
         return shoe.size();
     }
     
-    public List<Card> getCards() {
+    public ArrayList<Card> getCards() {
         ArrayList<Card> countShoe = new ArrayList<>();
         for (Card card : shoe)
         {

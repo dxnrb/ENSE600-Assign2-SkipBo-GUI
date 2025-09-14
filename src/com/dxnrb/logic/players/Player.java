@@ -10,6 +10,7 @@ import java.util.*;
 import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.DiscardPile;
 import com.dxnrb.logic.cards.DrawPile;
+import com.dxnrb.logic.cards.EmptyCard;
 import com.dxnrb.logic.cards.StockPile;
 
 /**
@@ -26,7 +27,12 @@ public class Player {
     public Player(String name) {
         this.name = name;
 
-        // Initialise players discard pile 
+        // Initialize players hand
+        for (int i = 0; i < 5; i++) {
+            this.playerHand.add(new EmptyCard());
+        }
+        
+        // Initialize players discard pile 
         for (int i = 0; i < 4; i++)
         {
             DiscardPile d = new DiscardPile(i);
@@ -45,9 +51,10 @@ public class Player {
     // Hand
     
     public void fillHand(DrawPile drawPile) {
-        while (this.playerHand.size() < 5)
-        {
-            this.playerHand.add(drawPile.drawCard());
+        for (int i = 0; i < playerHand.size(); i++) {
+            if (playerHand.get(i) instanceof EmptyCard) {
+                this.playerHand.set(i, drawPile.drawCard());
+            }
         }
     }
     
@@ -92,7 +99,8 @@ public class Player {
     }
     
     public void removeFromPlayerHand(Card card) {
-        this.playerHand.remove(card);
+        int index = this.playerHand.indexOf(card);
+        this.playerHand.set(index, new EmptyCard());
     }
     
     public ArrayList<Card> getPlayerHand() {
@@ -176,6 +184,10 @@ public class Player {
     
     public void addToDiscardPile(Card card, int index) {
         this.playerDiscardPile.get(index).addCard(card);
+    }
+    
+    public void removeFromDiscardPile(int index) {
+        this.playerDiscardPile.get(index).drawCard();
     }
     
     public ArrayList<DiscardPile> getDiscardPileList() {
