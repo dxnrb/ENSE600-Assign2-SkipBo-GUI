@@ -84,30 +84,15 @@ public class GameManager {
     }
     
     
-    // Game specific methods //
+    //--- Game specific methods ---//
     
+    // Draw Pile
     public DrawPile getDrawPile() { 
         return this.drawPile;
     }
     
     public void restockDrawPile(Card card) {
         drawPile.restockCard(card);
-    }
-    
-    public ArrayList<BuildingPile> getBuildPile() {
-        return this.buildingPile;
-    }
-    
-    public BuildingPile getBuildPile(int i) { // Overloaded to get BuildingPile within the ArrayList
-        return this.buildingPile.get(i);
-    }
-    
-    // ChatGPT showed me some refined logic for letting the game manager be in control of whose turn it is
-    // I was asking it to understand how I need to structure my managers in conjunction with the Game class that controls the GUI
-    // My first assignment I had a turn manager, but GPT mentioned it is obsolete for the GUI as the "turns" occur with GUI interaction
-    public void nextTurn() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
-        getCurrentPlayer().fillHand(drawPile);
     }
     
     public void restockDrawPile() {
@@ -120,6 +105,26 @@ public class GameManager {
             }
         }
     }
+    
+    // Build Pile
+    public ArrayList<BuildingPile> getBuildPile() {
+        return this.buildingPile;
+    }
+    
+    public BuildingPile getBuildPile(int i) { // Overloaded to get BuildingPile within the ArrayList
+        return this.buildingPile.get(i);
+    }
+    
+    
+    // ChatGPT showed me some refined logic for letting the game manager be in control of whose turn it is
+    // I was asking it to understand how I need to structure my managers in conjunction with the Game class that controls the GUI
+    // My first assignment I had a turn manager, but GPT mentioned it is obsolete for the GUI as the "turns" occur with GUI interaction
+    // So the GUI events will make calls to the game manager which will sort all the logic depending on which players turn it is
+    public void nextTurn() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
+        getCurrentPlayer().fillHand(drawPile);
+    }
+    
     
     // Check card can be played
     public boolean playCard(Card card, Pile toPile) {
@@ -169,10 +174,12 @@ public class GameManager {
     
     
     
-    // Current player specific methods //
+    //--- Current player specific methods ---//
+    
     public Player getCurrentPlayer() {
         return this.players.get(currentPlayerIndex);
     }
+    
     
     // Hand:
     public ArrayList<Card> getCurrentPlayerHand() {
@@ -195,6 +202,7 @@ public class GameManager {
         }
     }
     
+    
     // Stock:
     public StockPile getCurrentPlayerStockPile() {
         return this.players.get(currentPlayerIndex).getStockPile();
@@ -203,6 +211,7 @@ public class GameManager {
     public Card getCurrentPlayerStockPileCard() {
         return this.players.get(currentPlayerIndex).getStockPile().peek();
     }
+    
     
     // Discard
     public ArrayList<DiscardPile> getCurrentPlayerDiscardPile() {
