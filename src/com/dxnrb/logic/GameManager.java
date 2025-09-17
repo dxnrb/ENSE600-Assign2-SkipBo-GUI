@@ -86,8 +86,8 @@ public class GameManager {
     
     // Game specific methods //
     
-    public Card getCardFromDrawPile() { 
-        return drawPile.drawCard();
+    public DrawPile getDrawPile() { 
+        return this.drawPile;
     }
     
     public void restockDrawPile(Card card) {

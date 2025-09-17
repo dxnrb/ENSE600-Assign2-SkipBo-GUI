@@ -18,8 +18,11 @@ public class BuildingPile extends Pile implements CardAddable, CardRemovable, Ca
     @Override
     public boolean addCard(Card card) {
         // If shoe is empty, a player can only add 1 or a wildcard to start the sequence
+        int cardNumber = card.getCardNumber();
+        int shoeSize = this.shoe.size();
+        
         if (this.shoe.isEmpty()) {
-            if (card.getCardNumber() == 0 || card.getCardNumber() == 1) {
+            if (cardNumber == 0 || cardNumber == 1) {
                 this.shoe.add(card);
                 return true;
             }
@@ -28,26 +31,28 @@ public class BuildingPile extends Pile implements CardAddable, CardRemovable, Ca
                 return false;
             }
         }
-        else {
-            // If the card being added is the next in the sequence:
-            if (card.getCardNumber() == this.shoe.size() + 1) {
-                this.shoe.add(card);
-                return true;
-            }
-            // If the card being added is a wildcard then it is valid anywhere in the sequence
-            else if ((card.getCardNumber() == 0) && (this.shoe.size() < 12)) {
-                this.shoe.add(card);
-                return true;
-            }
-            // If a wildcard is currently at the top of the pile, check the card being played is sequential
-            else if ((this.shoe.getLast().getCardNumber() == 0) && (card.getCardNumber() == this.shoe.get(this.shoe.size()-1).getCardNumber()+2))
-            {
-                this.shoe.add(card);
-                return true;
-            }
+        
+        // If the card being added is the next in the sequence:
+        if (cardNumber == shoeSize + 1) {
+            this.shoe.add(card);
+            return true;
         }
+        
+        // If the card being added is a wildcard then it is valid anywhere in the sequence
+        if ((cardNumber == 0) && (shoeSize < 12)) {
+            this.shoe.add(card);
+            return true;
+        }
+        
+        // If a wildcard is currently at the top of the pile, check the card being played is sequential
+        if ((this.shoe.getLast().getCardNumber() == 0) && (cardNumber == this.shoe.get(shoeSize-1).getCardNumber()+2))
+        {
+            this.shoe.add(card);
+            return true;
+        }
+        
         return false;
-}
+    }
     
     @Override
     public Card drawCard() {
