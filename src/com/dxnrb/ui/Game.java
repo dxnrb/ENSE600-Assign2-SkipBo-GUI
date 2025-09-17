@@ -21,6 +21,7 @@ public class Game extends javax.swing.JFrame {
     GameManager gameManager;
     private JButton[] handPiles;
     private JButton[] discardPiles;
+    private JLabel[][] discardPileLabels;
     private JButton[] buildPiles;
     
     // Enum to control GUI card flow states
@@ -41,21 +42,29 @@ public class Game extends javax.swing.JFrame {
     public Game(ArrayList<String> names) {
         initComponents();
         
-        // Array of buttons makes it easier to iterate over to update GUI
+        // Array makes it easier to iterate over to update GUI
         handPiles = new JButton[] {handPile1, handPile2, handPile3, handPile4, handPile5};
+        
         discardPiles = new JButton[] {discardPile1, discardPile2, discardPile3, discardPile4};
+        discardPileLabels = new JLabel[4][];
+        discardPileLabels[0] = new JLabel[] {dSlot1_CardBelow1, dSlot1_CardBelow2, dSlot1_CardBelow3};
+        discardPileLabels[1] = new JLabel[] {dSlot2_CardBelow1, dSlot2_CardBelow2, dSlot2_CardBelow3};
+        discardPileLabels[2] = new JLabel[] {dSlot3_CardBelow1, dSlot3_CardBelow2, dSlot3_CardBelow3};
+        discardPileLabels[3] = new JLabel[] {dSlot4_CardBelow1, dSlot4_CardBelow2, dSlot4_CardBelow3};
+        
         buildPiles = new JButton[] {buildPile1, buildPile2, buildPile3, buildPile4};
+        
         
         gameManager = new GameManager(names, 1); // Change ID parameter when doing database
         
-        renderNextPlayer();
+        renderTable();
         
         // The Game JFrame should only focus on making calls to the game manager to update moves for a players turn
         // This JFrame class (GUI) needs to be kept separate from the game logic
         // Create methods in the game manager that the GUI event methods call on and react to whatever the game manager returns
     }
 
-    private void renderNextPlayer() {
+    private void renderTable() {
         // Update turn indicator
         playerNameIndicator.setText(gameManager.getCurrentPlayer().getPlayerName() + "'s Turn");
         
@@ -86,6 +95,17 @@ public class Game extends javax.swing.JFrame {
             } else {
                 button.setText(Integer.toString(gameManager.getCurrentPlayerDiscardPile(i).peek().getCardNumber()));
                 button.setEnabled(true);
+            }
+            // Render cards below discard pile
+            ArrayList<Card> discardPile = gameManager.getCurrentPlayerDiscardPile(i).getCards();
+            for (int j = 0; j < discardPileLabels[i].length; j++) {
+                if (!discardPile.isEmpty() && (j < (discardPile.size()-1))) {
+                    discardPileLabels[i][j].setText(Integer.toString(discardPile.get(discardPile.size()-2-j).getCardNumber()));
+                    discardPileLabels[i][j].setVisible(true);
+                } else {
+                    discardPileLabels[i][j].setVisible(false);
+                }
+                
             }
             i++;
         }
@@ -171,7 +191,7 @@ public class Game extends javax.swing.JFrame {
             if (gameManager.playCard(selectedCard, gameManager.getBuildPile(index-1))) {
                 gameManager.isPlayerHandEmpty(); // Refills hand if ArrayList is empty
                 resetActionState();
-                renderNextPlayer();
+                renderTable();
             } else {
                 resetActionState();
                 JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
@@ -180,7 +200,7 @@ public class Game extends javax.swing.JFrame {
         if (currentAction == PlayerAction.SELECT_STOCK) {
             if (gameManager.playCard(gameManager.getCurrentPlayerStockPile(), gameManager.getBuildPile(index-1))) {
                 resetActionState();
-                renderNextPlayer();
+                renderTable();
             } else {
                 resetActionState();
                 JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
@@ -196,7 +216,7 @@ public class Game extends javax.swing.JFrame {
             }
             if (gameManager.playCard(gameManager.getCurrentPlayerDiscardPile(i), gameManager.getBuildPile(index-1))) {
                 resetActionState();
-                renderNextPlayer();
+                renderTable();
             } else {
                 resetActionState();
                 JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
@@ -208,7 +228,7 @@ public class Game extends javax.swing.JFrame {
             if (gameManager.playCard(selectedCard, gameManager.getCurrentPlayerDiscardPile(index-1))) {
                 resetActionState();
                 gameManager.nextTurn();
-                renderNextPlayer();
+                renderTable();
             }
         } else {
             selectedCard = gameManager.getCurrentPlayerDiscardPile(index-1).peek();
@@ -232,6 +252,7 @@ public class Game extends javax.swing.JFrame {
         TableTop = new javax.swing.JPanel();
         BuildPiles = new javax.swing.JPanel();
         buildSlotBurner = new javax.swing.JPanel();
+        BuildPileLabel = new javax.swing.JLabel();
         buildSlot1 = new javax.swing.JPanel();
         buildPile1 = new javax.swing.JButton();
         buildSlot2 = new javax.swing.JPanel();
@@ -242,20 +263,36 @@ public class Game extends javax.swing.JFrame {
         buildPile4 = new javax.swing.JButton();
         DiscardPiles = new javax.swing.JPanel();
         discardSlotBurner = new javax.swing.JPanel();
+        discardPileLabel = new javax.swing.JLabel();
         discardSlot1 = new javax.swing.JPanel();
         discardPile1 = new javax.swing.JButton();
+        dSlot1_CardBelow1 = new javax.swing.JLabel();
+        dSlot1_CardBelow2 = new javax.swing.JLabel();
+        dSlot1_CardBelow3 = new javax.swing.JLabel();
         discardSlot2 = new javax.swing.JPanel();
         discardPile2 = new javax.swing.JButton();
+        dSlot2_CardBelow1 = new javax.swing.JLabel();
+        dSlot2_CardBelow2 = new javax.swing.JLabel();
+        dSlot2_CardBelow3 = new javax.swing.JLabel();
         discardSlot3 = new javax.swing.JPanel();
         discardPile3 = new javax.swing.JButton();
+        dSlot3_CardBelow1 = new javax.swing.JLabel();
+        dSlot3_CardBelow2 = new javax.swing.JLabel();
+        dSlot3_CardBelow3 = new javax.swing.JLabel();
         discardSlot4 = new javax.swing.JPanel();
         discardPile4 = new javax.swing.JButton();
+        dSlot4_CardBelow1 = new javax.swing.JLabel();
+        dSlot4_CardBelow2 = new javax.swing.JLabel();
+        dSlot4_CardBelow3 = new javax.swing.JLabel();
         StockPiles = new javax.swing.JPanel();
         stockPile = new javax.swing.JButton();
         stockPileRemaining = new javax.swing.JLabel();
+        jLabel1 = new javax.swing.JLabel();
+        jSeparator1 = new javax.swing.JSeparator();
         HandPiles = new javax.swing.JPanel();
         handSlot1 = new javax.swing.JPanel();
         handPile1 = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
         handSlot2 = new javax.swing.JPanel();
         handPile2 = new javax.swing.JButton();
         handSlot3 = new javax.swing.JPanel();
@@ -267,6 +304,7 @@ public class Game extends javax.swing.JFrame {
         playerNameIndicator = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
         setSize(new java.awt.Dimension(854, 480));
 
         exitButton.setBackground(new java.awt.Color(255, 51, 51));
@@ -286,15 +324,24 @@ public class Game extends javax.swing.JFrame {
 
         BuildPiles.setLayout(new java.awt.GridLayout(1, 0));
 
+        BuildPileLabel.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        BuildPileLabel.setText("Build Pile");
+
         javax.swing.GroupLayout buildSlotBurnerLayout = new javax.swing.GroupLayout(buildSlotBurner);
         buildSlotBurner.setLayout(buildSlotBurnerLayout);
         buildSlotBurnerLayout.setHorizontalGroup(
             buildSlotBurnerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, buildSlotBurnerLayout.createSequentialGroup()
+                .addContainerGap(28, Short.MAX_VALUE)
+                .addComponent(BuildPileLabel)
+                .addContainerGap(26, Short.MAX_VALUE))
         );
         buildSlotBurnerLayout.setVerticalGroup(
             buildSlotBurnerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGroup(buildSlotBurnerLayout.createSequentialGroup()
+                .addGap(40, 40, 40)
+                .addComponent(BuildPileLabel)
+                .addContainerGap(41, Short.MAX_VALUE))
         );
 
         BuildPiles.add(buildSlotBurner);
@@ -312,7 +359,7 @@ public class Game extends javax.swing.JFrame {
         buildSlot1.setLayout(buildSlot1Layout);
         buildSlot1Layout.setHorizontalGroup(
             buildSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(buildSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot1Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -321,7 +368,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot1Layout.setVerticalGroup(
             buildSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGap(0, 101, Short.MAX_VALUE)
             .addGroup(buildSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot1Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -344,7 +391,7 @@ public class Game extends javax.swing.JFrame {
         buildSlot2.setLayout(buildSlot2Layout);
         buildSlot2Layout.setHorizontalGroup(
             buildSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(buildSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot2Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -353,7 +400,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot2Layout.setVerticalGroup(
             buildSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGap(0, 101, Short.MAX_VALUE)
             .addGroup(buildSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot2Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -376,7 +423,7 @@ public class Game extends javax.swing.JFrame {
         buildSlot3.setLayout(buildSlot3Layout);
         buildSlot3Layout.setHorizontalGroup(
             buildSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(buildSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot3Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -385,7 +432,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot3Layout.setVerticalGroup(
             buildSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGap(0, 101, Short.MAX_VALUE)
             .addGroup(buildSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot3Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -408,7 +455,7 @@ public class Game extends javax.swing.JFrame {
         buildSlot4.setLayout(buildSlot4Layout);
         buildSlot4Layout.setHorizontalGroup(
             buildSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(buildSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot4Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -417,7 +464,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot4Layout.setVerticalGroup(
             buildSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGap(0, 101, Short.MAX_VALUE)
             .addGroup(buildSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot4Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -434,15 +481,24 @@ public class Game extends javax.swing.JFrame {
 
         DiscardPiles.setLayout(new java.awt.GridLayout(1, 0));
 
+        discardPileLabel.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        discardPileLabel.setText("Discard Pile");
+
         javax.swing.GroupLayout discardSlotBurnerLayout = new javax.swing.GroupLayout(discardSlotBurner);
         discardSlotBurner.setLayout(discardSlotBurnerLayout);
         discardSlotBurnerLayout.setHorizontalGroup(
             discardSlotBurnerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, discardSlotBurnerLayout.createSequentialGroup()
+                .addContainerGap(23, Short.MAX_VALUE)
+                .addComponent(discardPileLabel)
+                .addContainerGap(15, Short.MAX_VALUE))
         );
         discardSlotBurnerLayout.setVerticalGroup(
             discardSlotBurnerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGroup(discardSlotBurnerLayout.createSequentialGroup()
+                .addGap(10, 10, 10)
+                .addComponent(discardPileLabel)
+                .addContainerGap(76, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlotBurner);
@@ -456,25 +512,43 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
+        dSlot1_CardBelow1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot1_CardBelow1.setText("Card Below 1");
+
+        dSlot1_CardBelow2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot1_CardBelow2.setText("Card Below 2");
+
+        dSlot1_CardBelow3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot1_CardBelow3.setText("Card Below 3");
+
         javax.swing.GroupLayout discardSlot1Layout = new javax.swing.GroupLayout(discardSlot1);
         discardSlot1.setLayout(discardSlot1Layout);
         discardSlot1Layout.setHorizontalGroup(
             discardSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
-            .addGroup(discardSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot1Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile1)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot1Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(discardPile1)
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(discardSlot1Layout.createSequentialGroup()
+                .addGap(24, 24, 24)
+                .addGroup(discardSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(dSlot1_CardBelow3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot1_CardBelow2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot1_CardBelow1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(24, 24, 24))
         );
         discardSlot1Layout.setVerticalGroup(
             discardSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-            .addGroup(discardSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot1Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile1)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(discardPile1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot1_CardBelow1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot1_CardBelow2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot1_CardBelow3)
+                .addContainerGap(7, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot1);
@@ -486,25 +560,43 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
+        dSlot2_CardBelow1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot2_CardBelow1.setText("Card Below 1");
+
+        dSlot2_CardBelow2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot2_CardBelow2.setText("Card Below 2");
+
+        dSlot2_CardBelow3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot2_CardBelow3.setText("Card Below 3");
+
         javax.swing.GroupLayout discardSlot2Layout = new javax.swing.GroupLayout(discardSlot2);
         discardSlot2.setLayout(discardSlot2Layout);
         discardSlot2Layout.setHorizontalGroup(
             discardSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
-            .addGroup(discardSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot2Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile2)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot2Layout.createSequentialGroup()
+                .addGap(24, 24, 24)
+                .addGroup(discardSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(dSlot2_CardBelow3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot2_CardBelow2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot2_CardBelow1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(24, 24, 24))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, discardSlot2Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(discardPile2)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         discardSlot2Layout.setVerticalGroup(
             discardSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-            .addGroup(discardSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot2Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile2)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(discardPile2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot2_CardBelow1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot2_CardBelow2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot2_CardBelow3)
+                .addContainerGap(7, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot2);
@@ -516,25 +608,43 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
+        dSlot3_CardBelow1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot3_CardBelow1.setText("Card Below 1");
+
+        dSlot3_CardBelow2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot3_CardBelow2.setText("Card Below 2");
+
+        dSlot3_CardBelow3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot3_CardBelow3.setText("Card Below 3");
+
         javax.swing.GroupLayout discardSlot3Layout = new javax.swing.GroupLayout(discardSlot3);
         discardSlot3.setLayout(discardSlot3Layout);
         discardSlot3Layout.setHorizontalGroup(
             discardSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
-            .addGroup(discardSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot3Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile3)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot3Layout.createSequentialGroup()
+                .addGap(24, 24, 24)
+                .addGroup(discardSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(dSlot3_CardBelow3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot3_CardBelow2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot3_CardBelow1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(24, 24, 24))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, discardSlot3Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(discardPile3)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         discardSlot3Layout.setVerticalGroup(
             discardSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-            .addGroup(discardSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot3Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile3)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(discardPile3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot3_CardBelow1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot3_CardBelow2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot3_CardBelow3)
+                .addContainerGap(7, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot3);
@@ -546,25 +656,43 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
+        dSlot4_CardBelow1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot4_CardBelow1.setText("Card Below 1");
+
+        dSlot4_CardBelow2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot4_CardBelow2.setText("Card Below 2");
+
+        dSlot4_CardBelow3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        dSlot4_CardBelow3.setText("Card Below 3");
+
         javax.swing.GroupLayout discardSlot4Layout = new javax.swing.GroupLayout(discardSlot4);
         discardSlot4.setLayout(discardSlot4Layout);
         discardSlot4Layout.setHorizontalGroup(
             discardSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
-            .addGroup(discardSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot4Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile4)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot4Layout.createSequentialGroup()
+                .addGap(24, 24, 24)
+                .addGroup(discardSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(dSlot4_CardBelow3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot4_CardBelow2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dSlot4_CardBelow1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(24, 24, 24))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, discardSlot4Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(discardPile4)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         discardSlot4Layout.setVerticalGroup(
             discardSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-            .addGroup(discardSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(discardSlot4Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(discardPile4)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(discardSlot4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(discardPile4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot4_CardBelow1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot4_CardBelow2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(dSlot4_CardBelow3)
+                .addContainerGap(7, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot4);
@@ -586,37 +714,47 @@ public class Game extends javax.swing.JFrame {
 
         stockPileRemaining.setText("Remaining");
 
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel1.setText("Stock Pile");
+
         javax.swing.GroupLayout StockPilesLayout = new javax.swing.GroupLayout(StockPiles);
         StockPiles.setLayout(StockPilesLayout);
         StockPilesLayout.setHorizontalGroup(
             StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(StockPilesLayout.createSequentialGroup()
-                .addContainerGap(21, Short.MAX_VALUE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(stockPileRemaining)
-                .addContainerGap(22, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, StockPilesLayout.createSequentialGroup()
+                .addContainerGap(17, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addContainerGap(17, Short.MAX_VALUE))
             .addGroup(StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(StockPilesLayout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addGap(0, 8, Short.MAX_VALUE)
                     .addComponent(stockPile)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+                    .addGap(0, 7, Short.MAX_VALUE)))
         );
         StockPilesLayout.setVerticalGroup(
             StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, StockPilesLayout.createSequentialGroup()
-                .addContainerGap(66, Short.MAX_VALUE)
+                .addContainerGap(12, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(37, 37, 37)
                 .addComponent(stockPileRemaining)
-                .addGap(18, 18, 18))
+                .addContainerGap(15, Short.MAX_VALUE))
             .addGroup(StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(StockPilesLayout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addGap(0, 37, Short.MAX_VALUE)
                     .addComponent(stockPile)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+                    .addGap(0, 36, Short.MAX_VALUE)))
         );
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
         TableTop.add(StockPiles, gridBagConstraints);
+        TableTop.add(jSeparator1, new java.awt.GridBagConstraints());
 
         HandPiles.setLayout(new java.awt.GridLayout(1, 0));
 
@@ -629,11 +767,17 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel2.setText("Hand");
+
         javax.swing.GroupLayout handSlot1Layout = new javax.swing.GroupLayout(handSlot1);
         handSlot1.setLayout(handSlot1Layout);
         handSlot1Layout.setHorizontalGroup(
             handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGroup(handSlot1Layout.createSequentialGroup()
+                .addContainerGap(39, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addContainerGap(42, Short.MAX_VALUE))
             .addGroup(handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(handSlot1Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -642,7 +786,10 @@ public class Game extends javax.swing.JFrame {
         );
         handSlot1Layout.setVerticalGroup(
             handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGroup(handSlot1Layout.createSequentialGroup()
+                .addContainerGap(11, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addContainerGap(69, Short.MAX_VALUE))
             .addGroup(handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(handSlot1Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -663,7 +810,7 @@ public class Game extends javax.swing.JFrame {
         handSlot2.setLayout(handSlot2Layout);
         handSlot2Layout.setHorizontalGroup(
             handSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(handSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(handSlot2Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -693,7 +840,7 @@ public class Game extends javax.swing.JFrame {
         handSlot3.setLayout(handSlot3Layout);
         handSlot3Layout.setHorizontalGroup(
             handSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(handSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(handSlot3Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -723,7 +870,7 @@ public class Game extends javax.swing.JFrame {
         handSlot4.setLayout(handSlot4Layout);
         handSlot4Layout.setHorizontalGroup(
             handSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(handSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(handSlot4Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -753,7 +900,7 @@ public class Game extends javax.swing.JFrame {
         handSlot5.setLayout(handSlot5Layout);
         handSlot5Layout.setHorizontalGroup(
             handSlot5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 105, Short.MAX_VALUE)
+            .addGap(0, 117, Short.MAX_VALUE)
             .addGroup(handSlot5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(handSlot5Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -787,11 +934,12 @@ public class Game extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(TableTop, javax.swing.GroupLayout.DEFAULT_SIZE, 770, Short.MAX_VALUE)
-                    .addComponent(playerNameIndicator, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(exitButton)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(playerNameIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, 770, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(exitButton))
+                    .addComponent(TableTop, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -942,6 +1090,7 @@ public class Game extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel BuildPileLabel;
     private javax.swing.JPanel BuildPiles;
     private javax.swing.JPanel DiscardPiles;
     private javax.swing.JPanel HandPiles;
@@ -956,10 +1105,23 @@ public class Game extends javax.swing.JFrame {
     private javax.swing.JPanel buildSlot3;
     private javax.swing.JPanel buildSlot4;
     private javax.swing.JPanel buildSlotBurner;
+    private javax.swing.JLabel dSlot1_CardBelow1;
+    private javax.swing.JLabel dSlot1_CardBelow2;
+    private javax.swing.JLabel dSlot1_CardBelow3;
+    private javax.swing.JLabel dSlot2_CardBelow1;
+    private javax.swing.JLabel dSlot2_CardBelow2;
+    private javax.swing.JLabel dSlot2_CardBelow3;
+    private javax.swing.JLabel dSlot3_CardBelow1;
+    private javax.swing.JLabel dSlot3_CardBelow2;
+    private javax.swing.JLabel dSlot3_CardBelow3;
+    private javax.swing.JLabel dSlot4_CardBelow1;
+    private javax.swing.JLabel dSlot4_CardBelow2;
+    private javax.swing.JLabel dSlot4_CardBelow3;
     private javax.swing.JButton discardPile1;
     private javax.swing.JButton discardPile2;
     private javax.swing.JButton discardPile3;
     private javax.swing.JButton discardPile4;
+    private javax.swing.JLabel discardPileLabel;
     private javax.swing.JPanel discardSlot1;
     private javax.swing.JPanel discardSlot2;
     private javax.swing.JPanel discardSlot3;
@@ -976,6 +1138,9 @@ public class Game extends javax.swing.JFrame {
     private javax.swing.JPanel handSlot3;
     private javax.swing.JPanel handSlot4;
     private javax.swing.JPanel handSlot5;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JLabel playerNameIndicator;
     private javax.swing.JButton stockPile;
     private javax.swing.JLabel stockPileRemaining;
