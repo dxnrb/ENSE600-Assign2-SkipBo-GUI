@@ -103,7 +103,8 @@ public class Game extends javax.swing.JFrame {
                     discardPileLabels[i][j].setText(Integer.toString(discardPile.get(discardPile.size()-2-j).getCardNumber()));
                     discardPileLabels[i][j].setVisible(true);
                 } else {
-                    discardPileLabels[i][j].setVisible(false);
+                    discardPileLabels[i][j].setText("[ ]");
+                    discardPileLabels[i][j].setVisible(true);
                 }
                 
             }
@@ -194,7 +195,7 @@ public class Game extends javax.swing.JFrame {
                 renderTable();
             } else {
                 resetActionState();
-                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Invalid move", JOptionPane.WARNING_MESSAGE);
             }
         }
         if (currentAction == PlayerAction.SELECT_STOCK) {
@@ -203,7 +204,7 @@ public class Game extends javax.swing.JFrame {
                 renderTable();
             } else {
                 resetActionState();
-                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Invalid move", JOptionPane.WARNING_MESSAGE);
             }
         }
         if (currentAction == PlayerAction.SELECT_DISCARD) {
@@ -219,16 +220,23 @@ public class Game extends javax.swing.JFrame {
                 renderTable();
             } else {
                 resetActionState();
-                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Illegal move", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Invalid move", JOptionPane.WARNING_MESSAGE);
             }
         }
     }
     private void discarding(int index) {
         if (currentAction == PlayerAction.SELECT_HAND) {
-            if (gameManager.playCard(selectedCard, gameManager.getCurrentPlayerDiscardPile(index-1))) {
+            int choice = JOptionPane.showConfirmDialog(this, "Playing to your discard pile will end your turn. Are you sure?", "End turn", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice == JOptionPane.YES_OPTION) {
+                if (gameManager.playCard(selectedCard, gameManager.getCurrentPlayerDiscardPile(index-1))) {
                 resetActionState();
                 gameManager.nextTurn();
                 renderTable();
+                }
+            }
+            else if (choice == JOptionPane.NO_OPTION) {
+                resetActionState();
+                return;
             }
         } else {
             selectedCard = gameManager.getCurrentPlayerDiscardPile(index-1).peek();

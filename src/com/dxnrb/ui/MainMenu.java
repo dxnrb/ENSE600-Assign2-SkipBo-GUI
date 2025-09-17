@@ -4,7 +4,7 @@
  */
 package com.dxnrb.ui;
 
-import com.dxnrb.logic.GameManager;
+import com.dxnrb.database.Derby;
 import java.awt.CardLayout;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -50,6 +50,9 @@ public class MainMenu extends javax.swing.JFrame {
         
         // Show menu panel at start up
         menuCard.show(Parent, "menu");
+        
+        // Start database
+        Derby.startDatabase();
     }
 
     /**
