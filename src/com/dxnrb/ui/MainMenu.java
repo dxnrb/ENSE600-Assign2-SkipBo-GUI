@@ -7,7 +7,10 @@ package com.dxnrb.ui;
 import com.dxnrb.database.Derby;
 import java.awt.CardLayout;
 import java.awt.Point;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 
 /**
@@ -50,9 +53,6 @@ public class MainMenu extends javax.swing.JFrame {
         
         // Show menu panel at start up
         menuCard.show(Parent, "menu");
-        
-        // Start database
-        Derby.startDatabase();
     }
 
     /**
@@ -432,6 +432,7 @@ public class MainMenu extends javax.swing.JFrame {
         int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to quit the game?", "Quit Game", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice == JOptionPane.YES_OPTION)
         {
+            Derby.closeDatabase();
             System.exit(0);
         }
         else if (choice == JOptionPane.NO_OPTION)
@@ -494,13 +495,21 @@ public class MainMenu extends javax.swing.JFrame {
             names.add(playerFields[i].getText());
         }
         // For the new instance of the Game JFrame, pass the list of names so it can create a game manager
-        Game gameWindow = new Game(names);
-        
-        // Get this JFrames location and set gameWindows position to match for window continuity
-        Point location = this.getLocation();
-        gameWindow.setLocation(location);
-        gameWindow.setVisible(true);
-        this.dispose();
+        Game gameWindow;
+        try {
+            gameWindow = new Game(names);
+            
+            // Start database
+            Derby.startDatabase();
+            
+            // Get this JFrames location and set gameWindows position to match for window continuity
+            Point location = this.getLocation();
+            gameWindow.setLocation(location);
+            gameWindow.setVisible(true);
+            this.dispose();
+        } catch (SQLException ex) {
+            Logger.getLogger(MainMenu.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_startGameButtonActionPerformed
 
     private void playerTextField1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_playerTextField1FocusGained

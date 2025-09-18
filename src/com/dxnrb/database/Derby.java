@@ -5,11 +5,13 @@
 
 package com.dxnrb.database;
 
+import com.dxnrb.logic.cards.DrawPile;
 import com.dxnrb.logic.players.Player;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.annotation.*;
 import java.sql.*;
+import java.util.ArrayList;
 
 /**
  *
@@ -20,6 +22,8 @@ public class Derby {
         startDatabase();
     }
     
+    private static ObjectMapper mapper = new ObjectMapper();
+    private static Connection connection;
     // When you get back
     // Look into Jackson (JSON library)
     // Think about tables
@@ -79,41 +83,64 @@ public class Derby {
         }
     }
     
-    public static void savePlayer(Player player, int gameID) throws SQLException {
-        try {
-            Connection conn = getConnection();
-            ObjectMapper mapper = new ObjectMapper();
+    public static void saveGame(int gameID, int playerCount, int currentTurn, boolean gameCompleted,
+                              Integer winningPlayerId, String buildingPilesJson, String drawPileJson) throws SQLException {
 
+    String sql = "UPDATE game_state SET " +
+                 "player_count = ?, " +
+                 "current_turn = ?, " +
+                 "game_completed = ?, " +
+                 "winning_player_id = ?, " +
+                 "building_piles = ?, " +
+                 "draw_pile = ?, " +
+                 "updated_at = CURRENT_TIMESTAMP " +
+                 "WHERE game_id = ?";
+
+    try (Connection conn = getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setInt(1, playerCount);
+        stmt.setInt(2, currentTurn);
+        stmt.setBoolean(3, gameCompleted);
+
+        if (winningPlayerId != null) {
+            stmt.setInt(4, winningPlayerId);
+        } else {
+            stmt.setNull(4, java.sql.Types.INTEGER);
+        }
+
+        stmt.setString(5, buildingPilesJson);
+        stmt.setString(6, drawPileJson);
+        stmt.setInt(7, gameID);
+
+        int rowsUpdated = stmt.executeUpdate();
+
+        if (rowsUpdated == 0) {
+            throw new SQLException("No game found with game_id: " + gameID);
+        }
+    }
+}
+
+    
+    // Insert one player tied to an existing game_id
+    public static void savePlayer(Player player) throws SQLException {
+        
+        try (Connection conn = getConnection()) {
             String handJson = mapper.writeValueAsString(player.getPlayerHand());
             String stockJson = mapper.writeValueAsString(player.getStockPile());
-            String discardJson = mapper.writeValueAsString(player.getDiscardPileList()); // your discard piles class should have getCards() for each pile
+            String discardJson = mapper.writeValueAsString(player.getDiscardPileList());
 
-            String gs = "INSERT INTO game_state (player_count, current_turn) VALUES (?, ?)";
-            PreparedStatement pstm = conn.prepareStatement(gs, Statement.RETURN_GENERATED_KEYS);
-            pstm.setInt(1, 2); // e.g., number of players
-            pstm.setInt(2, 1);  // e.g., 1
-            pstm.executeUpdate();
-
-            // Get the generated game_id
-            ResultSet rs = pstm.getGeneratedKeys();
-            int gameIDs = 0;
-            if (rs.next()) {
-                gameIDs = rs.getInt(1);
-            }
-            rs.close();
-            pstm.close();
-            
             String sql = "INSERT INTO players (game_id, player_name, hand, stock_pile, discard_piles) VALUES (?, ?, ?, ?, ?)";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, gameID);
-                pstmt.setString(2, player.getPlayerName());
-                pstmt.setString(3, handJson);
-                pstmt.setString(4, stockJson);
-                pstmt.setString(5, discardJson);
-                pstmt.executeUpdate();
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, getGameID());
+                stmt.setString(2, player.getPlayerName());
+                stmt.setString(3, handJson);
+                stmt.setString(4, stockJson);
+                stmt.setString(5, discardJson);
+                stmt.executeUpdate();
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // you may want better error handling
         }
     }
     
@@ -123,7 +150,73 @@ public class Derby {
         String password = "010101";
         return DriverManager.getConnection(url, username, password);
     }
+    
+    public static int getGameID() throws SQLException {
+        int gameID = -1;
 
+        String selectSql = "SELECT game_id FROM game_state ORDER BY created_at DESC FETCH FIRST ROW ONLY";
+
+        try (Connection conn = getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
+             ResultSet rs = selectStmt.executeQuery()) {
+
+            if (rs.next()) {
+                // Found an existing game, return its ID
+                gameID = rs.getInt("game_id");
+            } else {
+                // No game found → insert a new row
+                String insertSql = "INSERT INTO game_state " +
+                        "(player_count, current_turn, game_completed, created_at, updated_at) " +
+                        "VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                    insertStmt.setInt(1, 2); // default player count
+                    insertStmt.setInt(2, -1); // default current turn
+                    insertStmt.setBoolean(3, false); // default not completed
+                    insertStmt.executeUpdate();
+
+                    try (ResultSet keys = insertStmt.getGeneratedKeys()) {
+                        if (keys.next()) {
+                            gameID = keys.getInt(1);
+                        }
+                    }
+                }
+            }
+        }
+
+        return gameID;
+    }
+
+    public static String convertPileToJson(Object pile) {
+        if (pile == null) return "[]";
+
+        try {
+            if (pile instanceof ArrayList<?>) {
+                // Treat as building piles
+                return mapper.writeValueAsString(pile);
+            } else if (pile instanceof DrawPile) {
+                // Treat as draw pile
+                return mapper.writeValueAsString(((DrawPile) pile).getCards());
+            } else {
+                throw new IllegalArgumentException("Unsupported pile type: " + pile.getClass());
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "[]"; // fallback
+        }
+    }
+    
+    public static void closeDatabase() {
+    if (connection != null) {
+        try {
+            connection.close();
+            System.out.println("Database connection closed.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+    
     
     //--- READ METHODS ---//
     

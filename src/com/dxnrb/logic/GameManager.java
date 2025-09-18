@@ -25,6 +25,9 @@ public class GameManager {
     private int gameID;
     private int playerCount = 2;
     
+    private Integer winningPlayerID = null; // null relates to database
+    private boolean gameCompleted = false;
+    
     private ArrayList<Player> players = new ArrayList<>();
     private int currentPlayerIndex = -1; // Initialized. nextTurn() method increments to 0 (starting index of player ArrayList)
     
@@ -36,7 +39,7 @@ public class GameManager {
     
     public GameManager(ArrayList<String> players, int gameID) throws SQLException {
         this.playerCount = players.size();
-        this.gameID = gameID;
+        this.gameID = Derby.getGameID();
         
         // Shuffle draw pile
         this.drawPile.shuffle();
@@ -81,12 +84,16 @@ public class GameManager {
             BuildingPile pile = new BuildingPile();
             this.buildingPile.add(pile);
         }
-        
+        Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
         nextTurn(); // Initialize player 1's turn
     }
     
     
     //--- Game specific methods ---//
+    
+    public int getGameID() {
+        return this.gameID;
+    }
     
     // Draw Pile
     public DrawPile getDrawPile() { 
@@ -125,7 +132,7 @@ public class GameManager {
     public void nextTurn() throws SQLException {
         currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
         getCurrentPlayer().fillHand(drawPile);
-        Derby.savePlayer(getCurrentPlayer(), 1);
+        Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
     }
     
     

@@ -8,6 +8,7 @@ import com.dxnrb.logic.GameManager;
 import com.dxnrb.logic.cards.BuildingPile;
 import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.EmptyCard;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -19,7 +20,7 @@ import org.junit.Test;
 public class GameManagerTest {
     
     @Test
-    public void testNextTurnCyclesPlayers() { // Use of asserstEqual
+    public void testNextTurnCyclesPlayers() throws SQLException { // Use of asserstEqual
         // This function tests some new logic that ChatGPT showed me
         // It uses modulo to reset the turn count to 0 once the final player is reached
         // I made this test to understand if I need to initialize the int variable that tracks the index of the current player
@@ -48,7 +49,7 @@ public class GameManagerTest {
     }
     
     @Test
-    public void testRestocktoDrawPile() { // Use of assertsTrue
+    public void testRestocktoDrawPile() throws SQLException { // Use of assertsTrue
         // This test ensures that when a build pile is full it is cleared.
         // The cleared cards are shuffled and returned to the draw pile.
         // This is necessary so that the draw pile is never empty, and gives the illusion
@@ -80,7 +81,7 @@ public class GameManagerTest {
     }
     
     @Test
-    public void testCardCanBePlayed() {
+    public void testCardCanBePlayed() throws SQLException {
         // Initialize game manager class
         ArrayList<String> names = new ArrayList<>();
         names.add("Player 1");
