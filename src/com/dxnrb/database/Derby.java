@@ -5,10 +5,11 @@
 
 package com.dxnrb.database;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.dxnrb.logic.players.Player;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.annotation.*;
+import java.sql.*;
 
 /**
  *
@@ -30,37 +31,47 @@ public class Derby {
     
     public static void startDatabase() {
         String url = "jdbc:derby:javaDB;create=true"; // "javaDB" will be created if missing
+        String username = "root";
+        String password = "010101";
 
-        try (Connection conn = DriverManager.getConnection(url)) {
+        try (Connection conn = DriverManager.getConnection(url, username, password)) {
             System.out.println("Connected to Derby database.");
-
             // Initialize schema (create tables if not already created)
             try (Statement stmt = conn.createStatement()) {
                 stmt.executeUpdate("CREATE TABLE game_state (" + 
-                        "game_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY," + 
-                        "player1_name VARCHAR(50)," +
-                        "player2_name VARCHAR(50)," +
-                        "player3_name VARCHAR(50)," +
-                        "player4_name VARCHAR(50)," +
-                        "player5_name VARCHAR(50)," +
-                        "player6_name VARCHAR(50)," +
-                        "player1_hand CLOB," +
-                        "player2_hand CLOB," +
-                        "player3_hand CLOB," +
-                        "player4_hand CLOB," +
-                        "player5_hand CLOB," +
-                        "player6_hand CLOB," +
-                        "current_turn INT," +
-                        "complete BOOLEAN DEFAULT FALSE," +
-                        "winner VARCHAR(50)," +
-                        "");
-                System.out.println("Table created.");
+                        "game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " + 
+                        "player_count INT NOT NULL CHECK (player_count BETWEEN 2 AND 6), " +
+                        "current_turn INT NOT NULL, " +
+                        "game_completed BOOLEAN DEFAULT FALSE, " +
+                        "winning_player_id INT DEFAULT NULL, " +
+                        "building_piles CLOB, " +   // JSON array of building piles
+                        "draw_pile CLOB, " +        // JSON array of cards
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_at TIMESTAMP" +
+                        ")");
+                System.out.println("Table game_state created.");
             } catch (SQLException e) {
                 if (e.getSQLState().equals("X0Y32")) {
                     // Table already exists
-                    System.out.println("Table already exists.");
-                } else {
-                    throw e; // some other error
+                    System.out.println("Table game_state already exists");
+                }
+            }
+            
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("CREATE TABLE players (" + 
+                        "player_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " + 
+                        "game_id INT NOT NULL, " +
+                        "player_name VARCHAR(100) NOT NULL, " +
+                        "discard_piles CLOB, " +    // JSON array of discard piles
+                        "stock_pile CLOB, " +       // JSON object (cards in stock pile)
+                        "hand CLOB, " +             // JSON array of cards
+                        "CONSTRAINT fk_game FOREIGN KEY (game_id) REFERENCES game_state(game_id)" +
+                        ")");
+                System.out.println("Table players created.");
+            } catch (SQLException e) {
+                if (e.getSQLState().equals("X0Y32")) {
+                    // Table already exists
+                    System.out.println("Table players already exists");
                 }
             }
         } catch (SQLException e) {
@@ -68,7 +79,51 @@ public class Derby {
         }
     }
     
+    public static void savePlayer(Player player, int gameID) throws SQLException {
+        try {
+            Connection conn = getConnection();
+            ObjectMapper mapper = new ObjectMapper();
+
+            String handJson = mapper.writeValueAsString(player.getPlayerHand());
+            String stockJson = mapper.writeValueAsString(player.getStockPile());
+            String discardJson = mapper.writeValueAsString(player.getDiscardPileList()); // your discard piles class should have getCards() for each pile
+
+            String gs = "INSERT INTO game_state (player_count, current_turn) VALUES (?, ?)";
+            PreparedStatement pstm = conn.prepareStatement(gs, Statement.RETURN_GENERATED_KEYS);
+            pstm.setInt(1, 2); // e.g., number of players
+            pstm.setInt(2, 1);  // e.g., 1
+            pstm.executeUpdate();
+
+            // Get the generated game_id
+            ResultSet rs = pstm.getGeneratedKeys();
+            int gameIDs = 0;
+            if (rs.next()) {
+                gameIDs = rs.getInt(1);
+            }
+            rs.close();
+            pstm.close();
+            
+            String sql = "INSERT INTO players (game_id, player_name, hand, stock_pile, discard_piles) VALUES (?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, gameID);
+                pstmt.setString(2, player.getPlayerName());
+                pstmt.setString(3, handJson);
+                pstmt.setString(4, stockJson);
+                pstmt.setString(5, discardJson);
+                pstmt.executeUpdate();
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
     
+    private static Connection getConnection() throws SQLException {
+        String url = "jdbc:derby:javaDB;create=true";
+        String username = "root";
+        String password = "010101";
+        return DriverManager.getConnection(url, username, password);
+    }
+
     
     //--- READ METHODS ---//
     

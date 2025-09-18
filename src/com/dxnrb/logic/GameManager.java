@@ -4,6 +4,7 @@
  */
 package com.dxnrb.logic;
 
+import com.dxnrb.database.Derby;
 import com.dxnrb.logic.cards.BuildingPile;
 import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.DiscardPile;
@@ -12,6 +13,7 @@ import com.dxnrb.logic.cards.EmptyCard;
 import com.dxnrb.logic.cards.Pile;
 import com.dxnrb.logic.cards.StockPile;
 import com.dxnrb.logic.players.Player;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 
@@ -32,7 +34,7 @@ public class GameManager {
     // Constructor of draw pile initializes all cards in the game's deck.
     private DrawPile drawPile = new DrawPile();
     
-    public GameManager(ArrayList<String> players, int gameID) {
+    public GameManager(ArrayList<String> players, int gameID) throws SQLException {
         this.playerCount = players.size();
         this.gameID = gameID;
         
@@ -120,9 +122,10 @@ public class GameManager {
     // I was asking it to understand how I need to structure my managers in conjunction with the Game class that controls the GUI
     // My first assignment I had a turn manager, but GPT mentioned it is obsolete for the GUI as the "turns" occur with GUI interaction
     // So the GUI events will make calls to the game manager which will sort all the logic depending on which players turn it is
-    public void nextTurn() {
+    public void nextTurn() throws SQLException {
         currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
         getCurrentPlayer().fillHand(drawPile);
+        Derby.savePlayer(getCurrentPlayer(), 1);
     }
     
     
