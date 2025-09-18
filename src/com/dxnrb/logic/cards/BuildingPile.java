@@ -7,13 +7,20 @@ package com.dxnrb.logic.cards;
 import com.dxnrb.logic.interfaces.CardAddable;
 import com.dxnrb.logic.interfaces.CardPeekable;
 import com.dxnrb.logic.interfaces.CardRemovable;
+import jakarta.persistence.*;
+import java.util.ArrayList;
 
 
 /**
  *
  * @author danie
  */
+@Entity
+@DiscriminatorValue("BUILDING")  // marks this subclass in the Pile table
 public class BuildingPile extends Pile implements CardAddable, CardRemovable, CardPeekable {
+    
+    @OneToMany(cascade = CascadeType.ALL)
+    private ArrayList<Card> shoe = new ArrayList<>();
     
     @Override
     public boolean addCard(Card card) {

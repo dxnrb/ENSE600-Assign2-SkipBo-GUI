@@ -4,6 +4,7 @@
  */
 package com.dxnrb.logic.cards;
 
+import jakarta.persistence.*;
 import java.util.*;
 
 /**
@@ -11,8 +12,16 @@ import java.util.*;
  * @author danie
  */
 
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "pile_type")  // identifies subclass in one table
 public abstract class Pile {
     
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     protected ArrayList<Card> shoe = new ArrayList<>();
     
     public int getSize() {

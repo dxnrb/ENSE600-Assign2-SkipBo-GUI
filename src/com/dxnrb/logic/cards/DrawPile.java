@@ -8,12 +8,22 @@ import java.util.Collections;
 import com.dxnrb.logic.interfaces.CardRemovable;
 import com.dxnrb.logic.interfaces.CardShufflable;
 import com.dxnrb.logic.interfaces.CardAddable;
+import jakarta.persistence.*;
+import java.util.ArrayList;
 
 /**
  *
  * @author danie
  */
+@Entity
 public class DrawPile extends Pile implements CardRemovable, CardShufflable, CardAddable {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    
+    @OneToMany(cascade = CascadeType.ALL)
+    private ArrayList<Card> shoe = new ArrayList<>();
     
     public DrawPile() {
         // Deck contains 144 cards numbered 1 through 12

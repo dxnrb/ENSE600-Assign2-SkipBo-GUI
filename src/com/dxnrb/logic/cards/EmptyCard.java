@@ -4,10 +4,14 @@
  */
 package com.dxnrb.logic.cards;
 
+import jakarta.persistence.*;
+
 /**
  *
  * @author danie
  */
+@Entity
+@DiscriminatorValue("EMPTY") // marks this subclass in the Card table
 public class EmptyCard extends Card {
     public EmptyCard() {
         super(-1);

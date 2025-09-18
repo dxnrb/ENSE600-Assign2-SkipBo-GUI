@@ -4,11 +4,35 @@
  */
 package com.dxnrb.logic.cards;
 
+import com.dxnrb.logic.players.Player;
+import jakarta.persistence.*;
+
 /**
  *
  * @author danie
  */
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "card_type") // identifies subclass in one table
 public class Card {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int CardID;
+    
+    @ManyToOne
+    private Player owner;
+    
+    @ManyToOne
+    private BuildingPile buildingPile;
+    
+    @ManyToOne
+    private DiscardPile discardPile;
+    
+    @ManyToOne
+    private StockPile stockPile;
+    
+    
     
     private int cardNumber;
     

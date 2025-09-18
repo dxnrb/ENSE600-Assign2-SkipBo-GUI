@@ -5,6 +5,7 @@
 package com.dxnrb.logic.players;
 
 
+import com.dxnrb.logic.GameManager;
 import java.util.*;
 
 import com.dxnrb.logic.cards.Card;
@@ -12,17 +13,34 @@ import com.dxnrb.logic.cards.DiscardPile;
 import com.dxnrb.logic.cards.DrawPile;
 import com.dxnrb.logic.cards.EmptyCard;
 import com.dxnrb.logic.cards.StockPile;
+import jakarta.persistence.*;
 
 /**
  *
  * @author danie
  */
+@Entity
 public class Player {
-    private String name;
     
-    private StockPile stockPile = new StockPile();    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int playerID;
+    
+    @OneToOne(cascade = CascadeType.ALL)
+    private StockPile stockPile = new StockPile();  
+    
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "player_id") // Foreign key in discard pile table
     private ArrayList<DiscardPile> playerDiscardPile = new ArrayList<>();
+    
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "player_id") // Foreign key in player hand table
     private ArrayList<Card> playerHand = new ArrayList<>();
+    
+    @ManyToOne // Foreign key in game_state table
+    private GameManager gameManager;
+    
+    private String name;
     
     public Player(String name) {
         this.name = name;

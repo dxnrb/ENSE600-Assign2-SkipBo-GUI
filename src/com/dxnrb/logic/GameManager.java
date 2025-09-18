@@ -13,22 +13,32 @@ import com.dxnrb.logic.cards.Pile;
 import com.dxnrb.logic.cards.StockPile;
 import com.dxnrb.logic.players.Player;
 import java.util.ArrayList;
+import jakarta.persistence.*;
 
 
 /**
  *
  * @author danie
  */
+@Entity
 public class GameManager {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int gameID;
     private int playerCount = 2;
     
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "game_id") // Foreign key in Player table
     private ArrayList<Player> players = new ArrayList<>();
     private int currentPlayerIndex = -1; // Initialized. nextTurn() method increments to 0 (starting index of player ArrayList)
     
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "game_id") // Foreign key in BuildingPile table
     // List of buildingPile objects where each list index is a building pile slot on the game's table
     private ArrayList<BuildingPile> buildingPile = new ArrayList<>();
     
+    @OneToOne(cascade = CascadeType.ALL)
     // Constructor of draw pile initializes all cards in the game's deck.
     private DrawPile drawPile = new DrawPile();
     
@@ -176,10 +186,13 @@ public class GameManager {
     
     //--- Current player specific methods ---//
     
+    public ArrayList<Player> getPlayers() {
+        return this.players;
+    }
+    
     public Player getCurrentPlayer() {
         return this.players.get(currentPlayerIndex);
     }
-    
     
     // Hand:
     public ArrayList<Card> getCurrentPlayerHand() {
