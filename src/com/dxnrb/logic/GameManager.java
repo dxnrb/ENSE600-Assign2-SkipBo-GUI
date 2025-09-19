@@ -39,7 +39,7 @@ public class GameManager {
     
     public GameManager(ArrayList<String> players, int gameID) throws SQLException {
         this.playerCount = players.size();
-        this.gameID = Derby.getGameID();
+        this.gameID = Derby.getGameID()+1;
         
         // Shuffle draw pile
         this.drawPile.shuffle();
@@ -53,7 +53,7 @@ public class GameManager {
         // Distribute cards to players stock piles
         if (this.playerCount <= 4) // 2 to 4 players get 30 cards in Stock Pile
         {
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 1; i++)
             {
                 for (Player player : this.players)
                 {
@@ -95,6 +95,10 @@ public class GameManager {
         return this.gameID;
     }
     
+    public boolean isGameCompleted() {
+        return this.gameCompleted;
+    }
+    
     // Draw Pile
     public DrawPile getDrawPile() { 
         return this.drawPile;
@@ -130,8 +134,14 @@ public class GameManager {
     // My first assignment I had a turn manager, but GPT mentioned it is obsolete for the GUI as the "turns" occur with GUI interaction
     // So the GUI events will make calls to the game manager which will sort all the logic depending on which players turn it is
     public void nextTurn() throws SQLException {
-        currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
-        getCurrentPlayer().fillHand(drawPile);
+        if (getCurrentPlayer().getStockPile().getSize() == 0) {
+            System.out.println("game won");
+            this.winningPlayerID = currentPlayerIndex;
+            this.gameCompleted = true;
+        } else {
+            currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
+            getCurrentPlayer().fillHand(drawPile);
+        }
         Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
     }
     
@@ -187,7 +197,11 @@ public class GameManager {
     //--- Current player specific methods ---//
     
     public Player getCurrentPlayer() {
-        return this.players.get(currentPlayerIndex);
+        if (currentPlayerIndex != -1) {
+            return this.players.get(currentPlayerIndex);
+        } else {
+            return this.players.get(0);
+        }
     }
     
     

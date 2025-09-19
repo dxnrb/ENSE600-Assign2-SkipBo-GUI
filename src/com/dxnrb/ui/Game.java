@@ -88,8 +88,10 @@ public class Game extends javax.swing.JFrame {
         }
         
         // Initialize GUI for players stock pile
-        stockPile.setText(Integer.toString(gameManager.getCurrentPlayerStockPileCard().getCardNumber()));
-        stockPileRemaining.setText("(" + gameManager.getCurrentPlayerStockPile().getSize() + ")");
+        if (gameManager.getCurrentPlayerStockPile().getSize() != 0) {
+            stockPile.setText(Integer.toString(gameManager.getCurrentPlayerStockPileCard().getCardNumber()));
+            stockPileRemaining.setText("(" + gameManager.getCurrentPlayerStockPile().getSize() + ")");
+        }
         
         // Initialize GUI for players discard pile
         i = 0;
@@ -206,8 +208,22 @@ public class Game extends javax.swing.JFrame {
         }
         if (currentAction == PlayerAction.SELECT_STOCK) {
             if (gameManager.playCard(gameManager.getCurrentPlayerStockPile(), gameManager.getBuildPile(index-1))) {
-                resetActionState();
-                renderTable();
+                // When the above statement is true the card can and will be played.
+                // Check the stock pile size to know if a win has occured
+                if (gameManager.getCurrentPlayerStockPile().getSize() != 0) { 
+                    resetActionState();
+                    renderTable();
+                } else {
+                    // nextTurn() method in GameManager has logic to internally update the winner, and the database
+                    gameManager.nextTurn();
+                    JOptionPane.showMessageDialog(this, gameManager.getCurrentPlayer().getPlayerName() + " has won the game!", "Winner!", JOptionPane.WARNING_MESSAGE);
+                    Point location = this.getLocation();
+                    MainMenu menu = new MainMenu();
+                    menu.setLocation(location);
+                    menu.setVisible(true);
+                    this.dispose();
+                }
+                
             } else {
                 resetActionState();
                 JOptionPane.showMessageDialog(this, "You can only place the next incremental number.", "Invalid move", JOptionPane.WARNING_MESSAGE);

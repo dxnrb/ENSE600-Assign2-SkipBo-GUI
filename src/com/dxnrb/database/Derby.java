@@ -23,7 +23,6 @@ public class Derby {
     }
     
     private static ObjectMapper mapper = new ObjectMapper();
-    private static Connection connection;
     // When you get back
     // Look into Jackson (JSON library)
     // Think about tables
@@ -84,63 +83,105 @@ public class Derby {
     }
     
     public static void saveGame(int gameID, int playerCount, int currentTurn, boolean gameCompleted,
-                              Integer winningPlayerId, String buildingPilesJson, String drawPileJson) throws SQLException {
+                            Integer winningPlayerId, String buildingPilesJson, String drawPileJson) throws SQLException {
+        String updateSql = "UPDATE game_state SET " +
+                "player_count = ?, " +
+                "current_turn = ?, " +
+                "game_completed = ?, " +
+                "winning_player_id = ?, " +
+                "building_piles = ?, " +
+                "draw_pile = ?, " +
+                "updated_at = CURRENT_TIMESTAMP " +
+                "WHERE game_id = ?";
 
-    String sql = "UPDATE game_state SET " +
-                 "player_count = ?, " +
-                 "current_turn = ?, " +
-                 "game_completed = ?, " +
-                 "winning_player_id = ?, " +
-                 "building_piles = ?, " +
-                 "draw_pile = ?, " +
-                 "updated_at = CURRENT_TIMESTAMP " +
-                 "WHERE game_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
 
-    try (Connection conn = getConnection();
-         PreparedStatement stmt = conn.prepareStatement(sql)) {
+            updateStmt.setInt(1, playerCount);
+            updateStmt.setInt(2, currentTurn);
+            updateStmt.setBoolean(3, gameCompleted);
 
-        stmt.setInt(1, playerCount);
-        stmt.setInt(2, currentTurn);
-        stmt.setBoolean(3, gameCompleted);
+            if (winningPlayerId != null) {
+                updateStmt.setInt(4, winningPlayerId);
+            } else {
+                updateStmt.setNull(4, java.sql.Types.INTEGER);
+            }
 
-        if (winningPlayerId != null) {
-            stmt.setInt(4, winningPlayerId);
-        } else {
-            stmt.setNull(4, java.sql.Types.INTEGER);
-        }
+            updateStmt.setString(5, buildingPilesJson);
+            updateStmt.setString(6, drawPileJson);
+            updateStmt.setInt(7, gameID);
 
-        stmt.setString(5, buildingPilesJson);
-        stmt.setString(6, drawPileJson);
-        stmt.setInt(7, gameID);
+            int rowsUpdated = updateStmt.executeUpdate();
 
-        int rowsUpdated = stmt.executeUpdate();
+            // If no game with that ID, insert a new one
+            if (rowsUpdated == 0) { 
+                String insertSql = "INSERT INTO game_state " +
+                        "(player_count, current_turn, game_completed, winning_player_id, " +
+                        "building_piles, draw_pile, created_at, updated_at) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 
-        if (rowsUpdated == 0) {
-            throw new SQLException("No game found with game_id: " + gameID);
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                    insertStmt.setInt(1, playerCount);
+                    insertStmt.setInt(2, currentTurn);
+                    insertStmt.setBoolean(3, gameCompleted);
+
+                    if (winningPlayerId != null) {
+                        insertStmt.setInt(4, winningPlayerId);
+                    } else {
+                        insertStmt.setNull(4, java.sql.Types.INTEGER);
+                    }
+
+                    insertStmt.setString(5, buildingPilesJson);
+                    insertStmt.setString(6, drawPileJson);
+
+                    insertStmt.executeUpdate();
+                }
+            }
         }
     }
-}
 
     
     // Insert one player tied to an existing game_id
     public static void savePlayer(Player player) throws SQLException {
-        
+        int gameId = getGameID(); // use the current active game_id
+
         try (Connection conn = getConnection()) {
             String handJson = mapper.writeValueAsString(player.getPlayerHand());
             String stockJson = mapper.writeValueAsString(player.getStockPile());
             String discardJson = mapper.writeValueAsString(player.getDiscardPileList());
 
-            String sql = "INSERT INTO players (game_id, player_name, hand, stock_pile, discard_piles) VALUES (?, ?, ?, ?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, getGameID());
-                stmt.setString(2, player.getPlayerName());
-                stmt.setString(3, handJson);
-                stmt.setString(4, stockJson);
-                stmt.setString(5, discardJson);
-                stmt.executeUpdate();
+            // Try updating existing player entry
+            String updateSql = "UPDATE players " +
+                    "SET hand = ?, stock_pile = ?, discard_piles = ? " +
+                    "WHERE game_id = ? AND player_name = ?";
+
+            try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                updateStmt.setString(1, handJson);
+                updateStmt.setString(2, stockJson);
+                updateStmt.setString(3, discardJson);
+                updateStmt.setInt(4, gameId);
+                updateStmt.setString(5, player.getPlayerName());
+
+                int rowsAffected = updateStmt.executeUpdate();
+
+                // If no row was updated, insert a new one
+                if (rowsAffected == 0) {
+                    String insertSql = "INSERT INTO players " +
+                            "(game_id, player_name, hand, stock_pile, discard_piles) " +
+                            "VALUES (?, ?, ?, ?, ?)";
+
+                    try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                        insertStmt.setInt(1, gameId);
+                        insertStmt.setString(2, player.getPlayerName());
+                        insertStmt.setString(3, handJson);
+                        insertStmt.setString(4, stockJson);
+                        insertStmt.setString(5, discardJson);
+                        insertStmt.executeUpdate();
+                    }
+                }
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace(); // you may want better error handling
+            e.printStackTrace(); // consider better error handling
         }
     }
     
@@ -164,7 +205,7 @@ public class Derby {
                 // Found an existing game, return its ID
                 gameID = rs.getInt("game_id");
             } else {
-                // No game found → insert a new row
+                // No game found, insert a new row
                 String insertSql = "INSERT INTO game_state " +
                         "(player_count, current_turn, game_completed, created_at, updated_at) " +
                         "VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
@@ -206,7 +247,8 @@ public class Derby {
         }
     }
     
-    public static void closeDatabase() {
+    public static void closeDatabase() throws SQLException {
+        Connection connection = getConnection();
     if (connection != null) {
         try {
             connection.close();
