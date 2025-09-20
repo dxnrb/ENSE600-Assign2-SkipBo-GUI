@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
 /**
  *
@@ -33,6 +34,9 @@ public class MainMenu extends javax.swing.JFrame {
     
     public MainMenu() {
         initComponents();
+        
+        // Start database
+        Derby.startDatabase();
         
         // Initialise card layout
         CardLayout menuCard = (CardLayout)(Parent.getLayout());
@@ -90,6 +94,12 @@ public class MainMenu extends javax.swing.JFrame {
                     }
                     // Enable or disable the button
                     gameLogContinueButton.setEnabled(!gameCompleted);
+                    
+                    if (gameLogTable.getRowCount() != -1) {
+                        gameLogDeleteButton.setEnabled(true);
+                    } else {
+                        gameLogDeleteButton.setEnabled(false);
+                    }
                 } else {
                     gameLogContinueButton.setEnabled(false);
                 }
@@ -116,7 +126,7 @@ public class MainMenu extends javax.swing.JFrame {
                 // Extract the rest of the columns
                 Object currentTurn = row.get("current_turn");
                 Object gameCompleted = row.get("game_completed");
-                Object winner = row.get("winner");
+                Object winner = row.get("winning_player");
                 Object updatedAt = row.get("updated_at");
 
                 // Add a new row to the model
@@ -156,11 +166,70 @@ public class MainMenu extends javax.swing.JFrame {
             // <--- ChatGPT wrote this
             
             gameLogTable.setModel(model);
+            
+            gameLogDeleteButton.setEnabled(false);
 
         } catch (SQLException e) {
             e.printStackTrace();
             javax.swing.JOptionPane.showMessageDialog(this,
                     "Failed to load game logs: " + e.getMessage(),
+                    "Database Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void updateScoreBoard() {
+        String[] columnNames = {"Player", "Wins"};
+        DefaultTableModel model = (DefaultTableModel) scoreBoardTable.getModel();
+        model.setColumnIdentifiers(columnNames);
+        model.setRowCount(0);
+        scoreBoardTable.setDefaultEditor(Object.class, null);
+
+        try {
+            ArrayList<HashMap<String, Object>> gameLog = Derby.readGameStates();
+
+            // Return immediately if no games exist
+            if (gameLog == null || gameLog.isEmpty()) {
+                return;
+            }
+
+            HashMap<String, Integer> playerWins = new HashMap<>();
+
+            for (HashMap<String, Object> games : gameLog) {
+                Object completedObj = games.get("game_completed");
+
+                // Skip if game_completed is null or false
+                if (!(completedObj instanceof Boolean completed) || !completed) {
+                    continue; // Skip incomplete games
+                }
+
+                Object winnerNameObj = games.get("winning_player");
+                if (!(winnerNameObj instanceof String winnerName) || winnerName.isEmpty()) {
+                    continue; // Skip games with no winner
+                }
+
+                playerWins.put(winnerName, playerWins.getOrDefault(winnerName, 0) + 1);
+            }
+
+            // Add entries to JTable
+            for (String key : playerWins.keySet()) {
+                Object[] row = {key, playerWins.get(key)};
+                model.addRow(row);
+            }
+
+            scoreBoardTable.setModel(model);
+            TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+            scoreBoardTable.setRowSorter(sorter);
+            
+            ArrayList<RowSorter.SortKey> sortKeys = new ArrayList<>();
+            sortKeys.add(new RowSorter.SortKey(1, SortOrder.DESCENDING));
+            sorter.setSortKeys(sortKeys);
+            sorter.sort();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Failed to load score board: " + e.getMessage(),
                     "Database Error",
                     javax.swing.JOptionPane.ERROR_MESSAGE);
         }
@@ -210,12 +279,16 @@ public class MainMenu extends javax.swing.JFrame {
         startGameButton = new javax.swing.JButton();
         scoreBoard = new javax.swing.JPanel();
         exitButton_ScoreBoard = new javax.swing.JButton();
+        scoreBoardHeader = new javax.swing.JLabel();
+        scoreBoardScrollPane = new javax.swing.JScrollPane();
+        scoreBoardTable = new javax.swing.JTable();
         gameLog = new javax.swing.JPanel();
         gameLogScrollPane = new javax.swing.JScrollPane();
         gameLogTable = new javax.swing.JTable();
         exitButton_GameLog = new javax.swing.JButton();
         gameLogHeader = new javax.swing.JLabel();
         gameLogContinueButton = new javax.swing.JButton();
+        gameLogDeleteButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -559,21 +632,47 @@ public class MainMenu extends javax.swing.JFrame {
             }
         });
 
+        scoreBoardHeader.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        scoreBoardHeader.setText("Score Board");
+
+        scoreBoardTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        scoreBoardScrollPane.setViewportView(scoreBoardTable);
+
         javax.swing.GroupLayout scoreBoardLayout = new javax.swing.GroupLayout(scoreBoard);
         scoreBoard.setLayout(scoreBoardLayout);
         scoreBoardLayout.setHorizontalGroup(
             scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scoreBoardLayout.createSequentialGroup()
-                .addContainerGap(821, Short.MAX_VALUE)
+            .addGroup(scoreBoardLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(scoreBoardHeader)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(exitButton_ScoreBoard)
                 .addContainerGap())
+            .addGroup(scoreBoardLayout.createSequentialGroup()
+                .addContainerGap(219, Short.MAX_VALUE)
+                .addComponent(scoreBoardScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(240, Short.MAX_VALUE))
         );
         scoreBoardLayout.setVerticalGroup(
             scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(scoreBoardLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(exitButton_ScoreBoard)
-                .addContainerGap(447, Short.MAX_VALUE))
+                .addGroup(scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(exitButton_ScoreBoard)
+                    .addComponent(scoreBoardHeader))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(scoreBoardScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 388, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(53, Short.MAX_VALUE))
         );
 
         Parent.add(scoreBoard, "card5");
@@ -613,11 +712,20 @@ public class MainMenu extends javax.swing.JFrame {
         gameLogHeader.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         gameLogHeader.setText("Game Logs");
 
+        gameLogContinueButton.setBackground(new java.awt.Color(0, 204, 51));
         gameLogContinueButton.setText("Continue Game");
         gameLogContinueButton.setEnabled(false);
         gameLogContinueButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 gameLogContinueButtonActionPerformed(evt);
+            }
+        });
+
+        gameLogDeleteButton.setText("Delete Game");
+        gameLogDeleteButton.setEnabled(false);
+        gameLogDeleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                gameLogDeleteButtonActionPerformed(evt);
             }
         });
 
@@ -633,9 +741,12 @@ public class MainMenu extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(exitButton_GameLog))
                     .addGroup(gameLogLayout.createSequentialGroup()
-                        .addGroup(gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addGroup(gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(gameLogScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 772, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(gameLogContinueButton))
+                            .addGroup(gameLogLayout.createSequentialGroup()
+                                .addComponent(gameLogDeleteButton)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(gameLogContinueButton)))
                         .addGap(0, 33, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -649,7 +760,9 @@ public class MainMenu extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(gameLogScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 399, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(gameLogContinueButton)
+                .addGroup(gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(gameLogContinueButton)
+                    .addComponent(gameLogDeleteButton))
                 .addContainerGap(9, Short.MAX_VALUE))
         );
 
@@ -736,9 +849,6 @@ public class MainMenu extends javax.swing.JFrame {
         try {
             gameWindow = new Game(names);
             
-            // Start database
-            Derby.startDatabase();
-            
             // Get this JFrames location and set gameWindows position to match for window continuity
             Point location = this.getLocation();
             gameWindow.setLocation(location);
@@ -789,6 +899,7 @@ public class MainMenu extends javax.swing.JFrame {
     private void scoreButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scoreButtonActionPerformed
         // TODO add your handling code here:
         CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        updateScoreBoard();
         menuCard.show(Parent, "scoreBoard");
     }//GEN-LAST:event_scoreButtonActionPerformed
 
@@ -815,9 +926,6 @@ public class MainMenu extends javax.swing.JFrame {
                 try {
                     gameWindow = new Game(gameState);
 
-                    // Start database
-                    Derby.startDatabase();
-
                     // Get this JFrames location and set gameWindows position to match for window continuity
                     Point location = this.getLocation();
                     gameWindow.setLocation(location);
@@ -841,6 +949,24 @@ public class MainMenu extends javax.swing.JFrame {
     private void gameLogScrollPaneKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_gameLogScrollPaneKeyPressed
         // TODO add your handling code here:
     }//GEN-LAST:event_gameLogScrollPaneKeyPressed
+
+    private void gameLogDeleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_gameLogDeleteButtonActionPerformed
+        // TODO add your handling code here:
+        int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this game?", "Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.YES_OPTION)
+        {
+            try {
+                Derby.deleteGameAndPlayers((int)gameLogTable.getValueAt(gameLogTable.getSelectedRow(), 0));
+                updateGameLogTable();
+            } catch (SQLException ex) {
+                Logger.getLogger(MainMenu.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        else if (choice == JOptionPane.NO_OPTION)
+        {
+            return;
+        }
+    }//GEN-LAST:event_gameLogDeleteButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -888,6 +1014,7 @@ public class MainMenu extends javax.swing.JFrame {
     private javax.swing.JPanel gameInit;
     private javax.swing.JPanel gameLog;
     private javax.swing.JButton gameLogContinueButton;
+    private javax.swing.JButton gameLogDeleteButton;
     private javax.swing.JLabel gameLogHeader;
     private javax.swing.JScrollPane gameLogScrollPane;
     private javax.swing.JTable gameLogTable;
@@ -914,6 +1041,9 @@ public class MainMenu extends javax.swing.JFrame {
     private javax.swing.JTextField playerTextField5;
     private javax.swing.JTextField playerTextField6;
     private javax.swing.JPanel scoreBoard;
+    private javax.swing.JLabel scoreBoardHeader;
+    private javax.swing.JScrollPane scoreBoardScrollPane;
+    private javax.swing.JTable scoreBoardTable;
     private javax.swing.JButton scoreButton;
     private javax.swing.JLabel spinnerLabel;
     private javax.swing.JButton startButton;

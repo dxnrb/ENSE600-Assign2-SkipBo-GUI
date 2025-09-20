@@ -73,7 +73,7 @@ public class Derby {
                         "discard_piles CLOB, " +    // JSON array of discard piles
                         "stock_pile CLOB, " +       // JSON object (cards in stock pile)
                         "hand CLOB, " +             // JSON array of cards
-                        "CONSTRAINT fk_game FOREIGN KEY (game_id) REFERENCES game_state(game_id)" +
+                        "CONSTRAINT fk_game FOREIGN KEY (game_id) REFERENCES game_state(game_id) ON DELETE CASCADE" +
                         ")");
                 System.out.println("Table players created.");
             } catch (SQLException e) {
@@ -144,6 +144,24 @@ public class Derby {
         }
     }
 
+    public static void deleteGameAndPlayers(int gameID) throws SQLException {
+        String deleteGameSql = "DELETE FROM game_state WHERE game_id = ?";
+
+        try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement stmtGame = connection.prepareStatement(deleteGameSql)) {
+                stmtGame.setInt(1, gameID);
+                stmtGame.executeUpdate();
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        }
+    }
     
     public static void savePlayers(ArrayList<Player> players) throws SQLException {
         int gameId = getGameID(); // active game_id
@@ -153,7 +171,7 @@ public class Derby {
 
             for (Player player : players) {
                 String handJson = mapper.writeValueAsString(player.getPlayerHand());
-                String stockJson = mapper.writeValueAsString(player.getStockPile());
+                String stockJson = mapper.writeValueAsString(player.getStockPile().getCards());
                 String discardJson = mapper.writeValueAsString(player.getDiscardPileList());
 
                 // If the Player already has an ID, try updating
@@ -333,11 +351,11 @@ public class Derby {
                     int winnerId = rs.getInt("winning_player_id");
                     row.put("winning_player_id", rs.wasNull() ? null : winnerId);
 
-                    // --- Deserialize building piles ---
+                    // Deserialize building piles
                     ArrayList<BuildingPile> buildingPiles = mapper.readValue(rs.getString("building_piles"), new TypeReference<ArrayList<BuildingPile>>(){});
                     row.put("building_piles", buildingPiles);
 
-                    // --- Deserialize draw pile (stored as ArrayList<Card>) ---
+                    // Deserialize draw pile
                     ArrayList<Card> drawPile = mapper.readValue(rs.getString("draw_pile"), new TypeReference<ArrayList<Card>>() {});
                     row.put("draw_pile", drawPile);
 
@@ -384,25 +402,21 @@ public class Derby {
                     row.put("player_id", rs.getInt("player_id"));
                     row.put("player_name", rs.getString("player_name"));
 
-                    // --- Hand ---
+                    // Hand
                     ArrayList<Card> playerHand = mapper.readValue(rs.getString("hand"), new TypeReference<ArrayList<Card>>(){});
                     row.put("player_hand", playerHand);
 
-                    // --- Stock pile ---
+                    // Stock pile
                     ArrayList<Card> stockCards = mapper.readValue(rs.getString("stock_pile"), new TypeReference<ArrayList<Card>>(){});
                     StockPile stockPile = new StockPile();
-                    for (Card card : stockCards) stockPile.addCard(card);
+                    for (Card card : stockCards) {
+                        stockPile.addCard(card);
+                    }
                     row.put("stock_pile", stockPile);
 
-                    // --- Discard piles ---
+                    // Discard piles
                     ArrayList<DiscardPile> discardPile = mapper.readValue(rs.getString("discard_piles"), new TypeReference<ArrayList<DiscardPile>>(){});
                     row.put("discard_piles", discardPile);
-//                    ArrayList<DiscardPile> discardPileList = new ArrayList<>();
-//                    for (ArrayList<Card> pileCards : discardLists) {
-//                        DiscardPile dp = new DiscardPile();
-//                        for (Card card : pileCards) dp.addCard(card);
-//                        discardPileObjs.add(dp);
-//                    }
 
                     playerRows.add(row);
                 }

@@ -20,8 +20,14 @@ public class Card {
         this.cardNumber = value;
     }
 
+    @JsonProperty("cardNumber")
     public int getCardNumber() {
         return cardNumber;
+    }
+    
+    @JsonProperty("cardNumber")
+    public void setCardNumber(int cardNumber) {
+        this.cardNumber = cardNumber;
     }
     
     // Method used for debugging

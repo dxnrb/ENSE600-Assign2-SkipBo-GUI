@@ -42,7 +42,6 @@ public class GameManager {
     
     public GameManager(ArrayList<String> players) throws SQLException {
         this.playerCount = players.size();
-        this.gameID = Derby.getGameID()+1;
         
         // Shuffle draw pile
         this.drawPile.shuffle();
@@ -56,7 +55,7 @@ public class GameManager {
         // Distribute cards to players stock piles
         if (this.playerCount <= 4) // 2 to 4 players get 30 cards in Stock Pile
         {
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 30; i++)
             {
                 for (Player player : this.players)
                 {
@@ -87,8 +86,9 @@ public class GameManager {
             BuildingPile pile = new BuildingPile();
             this.buildingPile.add(pile);
         }
-//        Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
+        
         nextTurn(); // Initialize player 1's turn
+        this.gameID = Derby.getGameID();
     }
     
     // Overloaded to continue a game
@@ -179,8 +179,7 @@ public class GameManager {
     // So the GUI events will make calls to the game manager which will sort all the logic depending on which players turn it is
     public void nextTurn() throws SQLException {
         if (getCurrentPlayer().getStockPile().getSize() == 0) {
-            System.out.println("game won");
-            this.winningPlayerID = currentPlayerIndex;
+            this.winningPlayerID = getCurrentPlayer().getPlayerID();
             this.gameCompleted = true;
         } else {
             currentPlayerIndex = (currentPlayerIndex + 1) % this.players.size();
