@@ -32,7 +32,7 @@ public class GameManagerTest {
         ArrayList<String> names = new ArrayList<>();
         names.add("Player 1");
         names.add("Player 2");
-        GameManager gameManager = new GameManager(names, 1);
+        GameManager gameManager = new GameManager(names);
         
         // This test returns true if Player 1 is the first turn
         assertEquals("Player 1", gameManager.getCurrentPlayer().getPlayerName());
@@ -59,7 +59,7 @@ public class GameManagerTest {
         ArrayList<String> names = new ArrayList<>();
         names.add("Player 1");
         names.add("Player 2");
-        GameManager gameManager = new GameManager(names, 1);
+        GameManager gameManager = new GameManager(names);
         
         BuildingPile pile = gameManager.getBuildPile(0); // Fill one of the games' building piles
         ArrayList<Card> restockingPile = pile.getCards(); // Reference these card objects to compare against draw pile after restock
@@ -86,7 +86,7 @@ public class GameManagerTest {
         ArrayList<String> names = new ArrayList<>();
         names.add("Player 1");
         names.add("Player 2");
-        GameManager gameManager = new GameManager(names, 1);
+        GameManager gameManager = new GameManager(names);
         
         // Test playCard() method works (Card, Pile)
         

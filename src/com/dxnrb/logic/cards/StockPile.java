@@ -7,12 +7,14 @@ package com.dxnrb.logic.cards;
 import com.dxnrb.logic.interfaces.CardAddable;
 import com.dxnrb.logic.interfaces.CardRemovable;
 import com.dxnrb.logic.interfaces.CardPeekable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 
 /**
  *
  * @author danie
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class StockPile extends Pile implements CardAddable, CardRemovable, CardPeekable {
 
     @Override

@@ -19,6 +19,7 @@ import com.dxnrb.logic.cards.StockPile;
  */
 public class Player {
     private String name;
+    private Integer playerID;
     
     private StockPile stockPile = new StockPile();    
     private ArrayList<DiscardPile> playerDiscardPile = new ArrayList<>();
@@ -35,9 +36,14 @@ public class Player {
         // Initialize players discard pile 
         for (int i = 0; i < 4; i++)
         {
-            DiscardPile d = new DiscardPile(i);
+            DiscardPile d = new DiscardPile();
             this.playerDiscardPile.add(d);
         }
+    }
+    
+    public Player(String name, int ID) {
+        this.name = name;
+        this.playerID = ID;
     }
     
     
@@ -45,6 +51,14 @@ public class Player {
     
     public String getPlayerName() {
         return this.name;
+    }
+    
+    public void setPlayerID(int id) {
+        this.playerID = id;
+    }
+    
+    public Integer getPlayerID() {
+        return this.playerID;
     }
     
     
@@ -67,6 +81,10 @@ public class Player {
         return this.playerHand;
     }
     
+    public void setPlayerHand(ArrayList<Card> hand) { // Setters now needed for resuming game feature
+        this.playerHand = hand;
+    }
+    
     
     // Stock
     public void addToStockPile(Card card) {
@@ -77,6 +95,10 @@ public class Player {
         return this.stockPile;
     }
     
+    public void setStockPile(StockPile stockPile) {
+        this.stockPile = stockPile;
+    }
+    
     public void removeFromStockPile() {
         this.stockPile.drawCard();
     }
@@ -85,5 +107,9 @@ public class Player {
     // Discard    
     public ArrayList<DiscardPile> getDiscardPileList() {
         return this.playerDiscardPile;
+    }
+    
+    public void setDiscardPileList(ArrayList<DiscardPile> discardPile) {
+        this.playerDiscardPile = discardPile;
     }
 }

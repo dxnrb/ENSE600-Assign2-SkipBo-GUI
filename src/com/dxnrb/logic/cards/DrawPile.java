@@ -8,11 +8,14 @@ import java.util.Collections;
 import com.dxnrb.logic.interfaces.CardRemovable;
 import com.dxnrb.logic.interfaces.CardShufflable;
 import com.dxnrb.logic.interfaces.CardAddable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.ArrayList;
 
 /**
  *
  * @author danie
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DrawPile extends Pile implements CardRemovable, CardShufflable, CardAddable {
     
     public DrawPile() {
@@ -30,6 +33,13 @@ public class DrawPile extends Pile implements CardRemovable, CardShufflable, Car
         {
             Card card = new Card(0);
             this.shoe.add(card);
+        }
+    }
+    
+    public void reloadDrawPile(ArrayList<Card> drawPile) {
+        this.shoe.clear();
+        for (Card card : drawPile) {
+            this.addCard(card);
         }
     }
     

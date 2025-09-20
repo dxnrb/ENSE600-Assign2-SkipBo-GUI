@@ -5,13 +5,18 @@
 package com.dxnrb.ui;
 
 import com.dxnrb.database.Derby;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.Point;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 /**
  *
@@ -38,6 +43,13 @@ public class MainMenu extends javax.swing.JFrame {
         
         Parent.add(instructions, "instructions");
         
+        Parent.add(scoreBoard, "scoreBoard");
+        
+        Parent.add(gameLog, "gameLog");
+        gameLogTable.getSelectionModel().addListSelectionListener(gameLogTable);
+        setupGameLogTableListener();
+        updateGameLogTable();
+        
         
         Parent.add(gameInit, "gameInit");
         // Create player count spinner
@@ -54,7 +66,107 @@ public class MainMenu extends javax.swing.JFrame {
         // Show menu panel at start up
         menuCard.show(Parent, "menu");
     }
+    
+    
+    // ChatGPT wrote this because I couldn't find an event listener in GUI builder for JTable
+    // There was mouse clicked but it didnt update if the keyboard was used and I didnt want two listeners
+    private void setupGameLogTableListener() {
+        gameLogTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+        gameLogTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = gameLogTable.getSelectedRow();
+                if (selectedRow >= 0) {
+                    Object completedValue = gameLogTable.getValueAt(selectedRow, 3); // 'Completed' column
+
+                    boolean gameCompleted = false; // default if null or invalid
+                    if (completedValue != null) {
+                        if (completedValue instanceof Boolean) {
+                            gameCompleted = (Boolean) completedValue;
+                        } else {
+                            // Try parsing as string in case it's "true"/"false"
+                            gameCompleted = Boolean.parseBoolean(completedValue.toString());
+                        }
+                    }
+                    // Enable or disable the button
+                    gameLogContinueButton.setEnabled(!gameCompleted);
+                } else {
+                    gameLogContinueButton.setEnabled(false);
+                }
+            }
+        });
+    }
+    
+    public void updateGameLogTable() {
+        String[] columnNames = {"Game ID", "Players", "Current Turn", "Completed", "Winner", "Last Updated"};
+        DefaultTableModel model = (DefaultTableModel) gameLogTable.getModel();
+        model.setColumnIdentifiers(columnNames);
+        model.setRowCount(0);
+        gameLogTable.setDefaultEditor(Object.class, null);
+        
+        try {
+            // Read all game states from the database
+            ArrayList<HashMap<String, Object>> gameStates = Derby.readGameStates();
+
+            for (HashMap<String, Object> row : gameStates) {
+                // Get players as a comma-separated string
+                ArrayList<String> playersList = Derby.readPlayersForGame((int) row.get("game_id"));
+                String players = "<html>" + String.join("<br>", playersList) + "</html>"; // ChatGPT wrote this line, I didn't know html had to be used to line break in a JTable
+
+                // Extract the rest of the columns
+                Object currentTurn = row.get("current_turn");
+                Object gameCompleted = row.get("game_completed");
+                Object winner = row.get("winner");
+                Object updatedAt = row.get("updated_at");
+
+                // Add a new row to the model
+                model.addRow(new Object[]{
+                    row.get("game_id"),
+                    players,
+                    currentTurn,
+                    gameCompleted,
+                    winner,
+                    updatedAt
+                });
+            }
+            
+            // ChatGPT wrote this --->
+            // Resize row heights to fit multi-line cells
+            // First, adjust column widths to fit content
+            for (int column = 0; column < gameLogTable.getColumnCount(); column++) {
+                int maxWidth = 50; // minimum starting width
+                for (int row = 0; row < gameLogTable.getRowCount(); row++) {
+                    TableCellRenderer renderer = gameLogTable.getCellRenderer(row, column);
+                    Component comp = gameLogTable.prepareRenderer(renderer, row, column);
+                    maxWidth = Math.max(maxWidth, comp.getPreferredSize().width + 10); // add padding
+                }
+                gameLogTable.getColumnModel().getColumn(column).setPreferredWidth(maxWidth);
+            }
+
+            // Then, adjust row heights to fit multi-line cells
+            for (int row = 0; row < gameLogTable.getRowCount(); row++) {
+                int maxHeight = gameLogTable.getRowHeight(); // default height
+                for (int column = 0; column < gameLogTable.getColumnCount(); column++) {
+                    TableCellRenderer renderer = gameLogTable.getCellRenderer(row, column);
+                    Component comp = gameLogTable.prepareRenderer(renderer, row, column);
+                    maxHeight = Math.max(maxHeight, comp.getPreferredSize().height);
+                }
+                gameLogTable.setRowHeight(row, maxHeight);
+            }
+            // <--- ChatGPT wrote this
+            
+            gameLogTable.setModel(model);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Failed to load game logs: " + e.getMessage(),
+                    "Database Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -96,9 +208,16 @@ public class MainMenu extends javax.swing.JFrame {
         playerLabel2 = new javax.swing.JLabel();
         playerLabel3 = new javax.swing.JLabel();
         startGameButton = new javax.swing.JButton();
+        scoreBoard = new javax.swing.JPanel();
+        exitButton_ScoreBoard = new javax.swing.JButton();
+        gameLog = new javax.swing.JPanel();
+        gameLogScrollPane = new javax.swing.JScrollPane();
+        gameLogTable = new javax.swing.JTable();
+        exitButton_GameLog = new javax.swing.JButton();
+        gameLogHeader = new javax.swing.JLabel();
+        gameLogContinueButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setPreferredSize(new java.awt.Dimension(854, 480));
         setResizable(false);
         setSize(new java.awt.Dimension(854, 480));
 
@@ -123,8 +242,18 @@ public class MainMenu extends javax.swing.JFrame {
         });
 
         scoreButton.setLabel("Score Board");
+        scoreButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                scoreButtonActionPerformed(evt);
+            }
+        });
 
         logButton.setLabel("Game Logs");
+        logButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                logButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout navigationLayout = new javax.swing.GroupLayout(navigation);
         navigation.setLayout(navigationLayout);
@@ -164,14 +293,14 @@ public class MainMenu extends javax.swing.JFrame {
         menuLayout.setHorizontalGroup(
             menuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(menuLayout.createSequentialGroup()
-                .addContainerGap(160, Short.MAX_VALUE)
+                .addContainerGap(295, Short.MAX_VALUE)
                 .addGroup(menuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, menuLayout.createSequentialGroup()
                         .addComponent(exitButton)
                         .addContainerGap())
                     .addGroup(menuLayout.createSequentialGroup()
                         .addComponent(logo)
-                        .addContainerGap(165, Short.MAX_VALUE))))
+                        .addContainerGap(300, Short.MAX_VALUE))))
             .addGroup(menuLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(navigation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -186,7 +315,7 @@ public class MainMenu extends javax.swing.JFrame {
                 .addComponent(logo)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(navigation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(12, Short.MAX_VALUE))
+                .addContainerGap(117, Short.MAX_VALUE))
         );
 
         Parent.add(menu, "card2");
@@ -422,6 +551,110 @@ public class MainMenu extends javax.swing.JFrame {
 
         Parent.add(gameInit, "card4");
 
+        exitButton_ScoreBoard.setBackground(new java.awt.Color(255, 51, 51));
+        exitButton_ScoreBoard.setLabel("X");
+        exitButton_ScoreBoard.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exitButton_ScoreBoardActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout scoreBoardLayout = new javax.swing.GroupLayout(scoreBoard);
+        scoreBoard.setLayout(scoreBoardLayout);
+        scoreBoardLayout.setHorizontalGroup(
+            scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scoreBoardLayout.createSequentialGroup()
+                .addContainerGap(821, Short.MAX_VALUE)
+                .addComponent(exitButton_ScoreBoard)
+                .addContainerGap())
+        );
+        scoreBoardLayout.setVerticalGroup(
+            scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(scoreBoardLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(exitButton_ScoreBoard)
+                .addContainerGap(447, Short.MAX_VALUE))
+        );
+
+        Parent.add(scoreBoard, "card5");
+
+        gameLogScrollPane.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                gameLogScrollPaneKeyPressed(evt);
+            }
+        });
+
+        gameLogTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        gameLogTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                gameLogTableMouseClicked(evt);
+            }
+        });
+        gameLogScrollPane.setViewportView(gameLogTable);
+
+        exitButton_GameLog.setBackground(new java.awt.Color(255, 51, 51));
+        exitButton_GameLog.setLabel("X");
+        exitButton_GameLog.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exitButton_GameLogActionPerformed(evt);
+            }
+        });
+
+        gameLogHeader.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        gameLogHeader.setText("Game Logs");
+
+        gameLogContinueButton.setText("Continue Game");
+        gameLogContinueButton.setEnabled(false);
+        gameLogContinueButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                gameLogContinueButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout gameLogLayout = new javax.swing.GroupLayout(gameLog);
+        gameLog.setLayout(gameLogLayout);
+        gameLogLayout.setHorizontalGroup(
+            gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(gameLogLayout.createSequentialGroup()
+                .addContainerGap(43, Short.MAX_VALUE)
+                .addGroup(gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(gameLogLayout.createSequentialGroup()
+                        .addComponent(gameLogHeader)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(exitButton_GameLog))
+                    .addGroup(gameLogLayout.createSequentialGroup()
+                        .addGroup(gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(gameLogScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 772, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(gameLogContinueButton))
+                        .addGap(0, 33, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        gameLogLayout.setVerticalGroup(
+            gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(gameLogLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(gameLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(exitButton_GameLog)
+                    .addComponent(gameLogHeader))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(gameLogScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 399, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(gameLogContinueButton)
+                .addContainerGap(9, Short.MAX_VALUE))
+        );
+
+        Parent.add(gameLog, "card6");
+
         getContentPane().add(Parent, java.awt.BorderLayout.CENTER);
 
         pack();
@@ -432,7 +665,11 @@ public class MainMenu extends javax.swing.JFrame {
         int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to quit the game?", "Quit Game", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice == JOptionPane.YES_OPTION)
         {
-            Derby.closeDatabase();
+            try {
+                Derby.closeDatabase();
+            } catch (SQLException ex) {
+                Logger.getLogger(MainMenu.class.getName()).log(Level.SEVERE, null, ex);
+            }
             System.exit(0);
         }
         else if (choice == JOptionPane.NO_OPTION)
@@ -542,6 +779,69 @@ public class MainMenu extends javax.swing.JFrame {
         playerTextField6.selectAll();
     }//GEN-LAST:event_playerTextField6FocusGained
 
+    private void logButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_logButtonActionPerformed
+        // TODO add your handling code here:
+        updateGameLogTable();
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        menuCard.show(Parent, "gameLog");
+    }//GEN-LAST:event_logButtonActionPerformed
+
+    private void scoreButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scoreButtonActionPerformed
+        // TODO add your handling code here:
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        menuCard.show(Parent, "scoreBoard");
+    }//GEN-LAST:event_scoreButtonActionPerformed
+
+    private void exitButton_GameLogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButton_GameLogActionPerformed
+        // TODO add your handling code here:
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        menuCard.show(Parent, "menu");
+    }//GEN-LAST:event_exitButton_GameLogActionPerformed
+
+    private void exitButton_ScoreBoardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButton_ScoreBoardActionPerformed
+        // TODO add your handling code here:
+        CardLayout menuCard = (CardLayout)(Parent.getLayout());
+        menuCard.show(Parent, "menu");
+    }//GEN-LAST:event_exitButton_ScoreBoardActionPerformed
+
+    private void gameLogContinueButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_gameLogContinueButtonActionPerformed
+        // TODO add your handling code here:
+        int selectedRow = gameLogTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            Object gameID = gameLogTable.getValueAt(selectedRow, 0);
+            try {
+                HashMap<String, Object> gameState = Derby.readGameStateID((int)gameID);
+                Game gameWindow;
+                try {
+                    gameWindow = new Game(gameState);
+
+                    // Start database
+                    Derby.startDatabase();
+
+                    // Get this JFrames location and set gameWindows position to match for window continuity
+                    Point location = this.getLocation();
+                    gameWindow.setLocation(location);
+                    gameWindow.setVisible(true);
+                    this.dispose();
+                } catch (SQLException ex) {
+                    Logger.getLogger(MainMenu.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(MainMenu.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (JsonProcessingException ex) {
+                Logger.getLogger(MainMenu.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_gameLogContinueButtonActionPerformed
+
+    private void gameLogTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_gameLogTableMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_gameLogTableMouseClicked
+
+    private void gameLogScrollPaneKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_gameLogScrollPaneKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_gameLogScrollPaneKeyPressed
+
     /**
      * @param args the command line arguments
      */
@@ -581,9 +881,16 @@ public class MainMenu extends javax.swing.JFrame {
     private javax.swing.JPanel Parent;
     private javax.swing.JPanel dynamicPlayerFields;
     private javax.swing.JButton exitButton;
+    private javax.swing.JButton exitButton_GameLog;
     private javax.swing.JButton exitButton_Instructions;
+    private javax.swing.JButton exitButton_ScoreBoard;
     private javax.swing.JButton exitButton_gameInit;
     private javax.swing.JPanel gameInit;
+    private javax.swing.JPanel gameLog;
+    private javax.swing.JButton gameLogContinueButton;
+    private javax.swing.JLabel gameLogHeader;
+    private javax.swing.JScrollPane gameLogScrollPane;
+    private javax.swing.JTable gameLogTable;
     private javax.swing.JPanel instructions;
     private javax.swing.JButton instructionsButton;
     private javax.swing.JLabel instructionsHeader;
@@ -606,6 +913,7 @@ public class MainMenu extends javax.swing.JFrame {
     private javax.swing.JTextField playerTextField4;
     private javax.swing.JTextField playerTextField5;
     private javax.swing.JTextField playerTextField6;
+    private javax.swing.JPanel scoreBoard;
     private javax.swing.JButton scoreButton;
     private javax.swing.JLabel spinnerLabel;
     private javax.swing.JButton startButton;

@@ -4,15 +4,19 @@
  */
 package com.dxnrb.logic.cards;
 
+import com.fasterxml.jackson.annotation.*;
+
 /**
  *
  * @author danie
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Card {
     
     private int cardNumber;
     
-    public Card(int value) {
+    @JsonCreator
+    public Card(@JsonProperty("cardNumber") int value) {
         this.cardNumber = value;
     }
 

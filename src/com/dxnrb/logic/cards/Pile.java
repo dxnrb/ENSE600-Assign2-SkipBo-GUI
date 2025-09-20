@@ -4,13 +4,15 @@
  */
 package com.dxnrb.logic.cards;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.*;
 
 /**
  *
  * @author danie
  */
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class Pile {
     
     protected ArrayList<Card> shoe = new ArrayList<>();
@@ -19,6 +21,7 @@ public abstract class Pile {
         return shoe.size();
     }
     
+    @JsonProperty("cards")
     public ArrayList<Card> getCards() {
         ArrayList<Card> countShoe = new ArrayList<>();
         for (Card card : shoe)
@@ -26,6 +29,14 @@ public abstract class Pile {
             countShoe.add(card);
         }
         return countShoe;
+    }
+    
+    @JsonProperty("cards")
+    public void setCards(ArrayList<Card> cards) {
+        this.shoe.clear();
+        if (cards != null) {
+            this.shoe.addAll(cards);
+        }
     }
     
     public int getCardIndex(Card card) {

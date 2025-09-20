@@ -9,9 +9,11 @@ import com.dxnrb.logic.GameManager;
 import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.DiscardPile;
 import com.dxnrb.logic.cards.EmptyCard;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.awt.Point;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -42,10 +44,32 @@ public class Game extends javax.swing.JFrame {
     
     /**
      * Creates new form Game
-     */
+     */    
     public Game(ArrayList<String> names) throws SQLException {
         initComponents();
         
+        initTable();
+        
+        gameManager = new GameManager(names); // Change ID parameter when doing database
+
+        renderTable();
+        
+        // The Game JFrame should only focus on making calls to the game manager to update moves for a players turn
+        // This JFrame class (GUI) needs to be kept separate from the game logic
+        // Create methods in the game manager that the GUI event methods call on and react to whatever the game manager returns
+    }
+    // Overloaded for resuming games
+    public Game(HashMap<String, Object> gameState) throws SQLException, JsonProcessingException {
+        initComponents();
+        
+        initTable();
+        
+        gameManager = new GameManager(gameState); // Change ID parameter when doing database
+
+        renderTable();
+    }
+    
+    public void initTable() {
         // Array makes it easier to iterate over to update GUI
         handPiles = new JButton[] {handPile1, handPile2, handPile3, handPile4, handPile5};
         
@@ -57,16 +81,6 @@ public class Game extends javax.swing.JFrame {
         discardPileLabels[3] = new JLabel[] {dSlot4_CardBelow1, dSlot4_CardBelow2, dSlot4_CardBelow3};
         
         buildPiles = new JButton[] {buildPile1, buildPile2, buildPile3, buildPile4};
-        
-        
-        gameManager = new GameManager(names, 1); // Change ID parameter when doing database
-
-        
-        renderTable();
-        
-        // The Game JFrame should only focus on making calls to the game manager to update moves for a players turn
-        // This JFrame class (GUI) needs to be kept separate from the game logic
-        // Create methods in the game manager that the GUI event methods call on and react to whatever the game manager returns
     }
 
     private void renderTable() throws SQLException {
@@ -130,7 +144,7 @@ public class Game extends javax.swing.JFrame {
         }
         
         currentAction = PlayerAction.NONE;
-        Derby.savePlayer(gameManager.getCurrentPlayer());
+        Derby.savePlayers(gameManager.getPlayerList());
     }
     
     
@@ -252,7 +266,7 @@ public class Game extends javax.swing.JFrame {
             if (choice == JOptionPane.YES_OPTION) {
                 if (gameManager.playCard(selectedCard, gameManager.getCurrentPlayerDiscardPile(index-1))) {
                 resetActionState();
-                Derby.savePlayer(gameManager.getCurrentPlayer());
+                Derby.savePlayers(gameManager.getPlayerList());
                 gameManager.nextTurn();
                 renderTable();
                 }

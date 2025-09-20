@@ -13,8 +13,11 @@ import com.dxnrb.logic.cards.EmptyCard;
 import com.dxnrb.logic.cards.Pile;
 import com.dxnrb.logic.cards.StockPile;
 import com.dxnrb.logic.players.Player;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 
 /**
@@ -37,7 +40,7 @@ public class GameManager {
     // Constructor of draw pile initializes all cards in the game's deck.
     private DrawPile drawPile = new DrawPile();
     
-    public GameManager(ArrayList<String> players, int gameID) throws SQLException {
+    public GameManager(ArrayList<String> players) throws SQLException {
         this.playerCount = players.size();
         this.gameID = Derby.getGameID()+1;
         
@@ -84,10 +87,51 @@ public class GameManager {
             BuildingPile pile = new BuildingPile();
             this.buildingPile.add(pile);
         }
-        Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
+//        Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
         nextTurn(); // Initialize player 1's turn
     }
     
+    // Overloaded to continue a game
+    public GameManager(HashMap<String, Object> gameState) throws SQLException, JsonProcessingException {
+        this.gameID = (int) gameState.get("game_id");
+        this.playerCount = (int) gameState.get("player_count");
+        
+        // Initialize players
+        ArrayList<HashMap<String, Object>> players = Derby.readPlayersPilesForGame(gameID);
+        for (HashMap<String, Object> player : players) {
+            Player p = new Player((String) player.get("player_name"), (int) player.get("player_id"));
+            
+            ArrayList<Card> playerHand = (ArrayList<Card>) player.get("player_hand");
+            for (Card card : playerHand) {
+                if (card.getCardNumber() == -1) {
+                    playerHand.set(playerHand.indexOf(card), new EmptyCard());
+                }
+            }
+            p.setPlayerHand((ArrayList<Card>) player.get("player_hand"));
+            
+            p.setStockPile((StockPile) player.get("stock_pile"));
+            
+            
+            p.setDiscardPileList((ArrayList<DiscardPile>) player.get("discard_piles"));
+            
+            
+            this.players.add(p);
+        }
+        
+        
+        this.currentPlayerIndex = (int) gameState.get("current_turn");
+        this.gameCompleted = (boolean) gameState.get("game_completed");
+        
+        Object winnerObj = gameState.get("winning_player_id");
+        this.winningPlayerID = (winnerObj == null) ? null : (Integer) winnerObj;
+        
+        ArrayList<BuildingPile> buildingPiles = (ArrayList<BuildingPile>) gameState.get("building_piles");
+        this.buildingPile = buildingPiles;
+        
+        this.drawPile.reloadDrawPile((ArrayList<Card>) gameState.get("draw_pile"));
+        
+        Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
+    }
     
     //--- Game specific methods ---//
     
@@ -147,11 +191,12 @@ public class GameManager {
     
     
     // Check card can be played
-    public boolean playCard(Card card, Pile toPile) {
+    public boolean playCard(Card card, Pile toPile) throws SQLException {
         if (toPile instanceof BuildingPile buildingPile) { // If card is being played to build pile
             if (buildingPile.addCard(card)) {
                 getCurrentPlayer().removeFromPlayerHand(card);
                 restockDrawPile();
+                Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
                 return true;
             }
             else {
@@ -162,15 +207,17 @@ public class GameManager {
             discardPile.addCard(card);
             getCurrentPlayer().removeFromPlayerHand(card);
             restockDrawPile();
+            Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
             return true;
         }
         return false;
     }
-    public boolean playCard(Pile fromPile, BuildingPile toPile) { // Overload for playing from stock or discard pile
+    public boolean playCard(Pile fromPile, BuildingPile toPile) throws SQLException { // Overload for playing from stock or discard pile
         if (fromPile instanceof StockPile stockPile) { // Card being played from stock pile
             if (toPile.addCard(stockPile.peek())) {
                 getCurrentPlayer().removeFromStockPile();
                 restockDrawPile();
+                Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
                 return true;
             }
             else {
@@ -181,6 +228,7 @@ public class GameManager {
             if (toPile.addCard(discardPile.peek())) {
                 discardPile.drawCard();
                 restockDrawPile();
+                Derby.saveGame(this.gameID, this.playerCount, this.currentPlayerIndex, this.gameCompleted, this.winningPlayerID, Derby.convertPileToJson(this.buildingPile), Derby.convertPileToJson(this.drawPile));
                 return true;
             }
             else {
@@ -195,6 +243,10 @@ public class GameManager {
     
     
     //--- Current player specific methods ---//
+    
+    public ArrayList<Player> getPlayerList() {
+        return this.players;
+    }
     
     public Player getCurrentPlayer() {
         if (currentPlayerIndex != -1) {
