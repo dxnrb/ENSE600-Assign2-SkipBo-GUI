@@ -1,5 +1,8 @@
 ----------------------------------------------------------------
-Sat Sep 20 22:31:47 NZST 2025D001 : [0] The Apache Software Foundation - Apache Derby - 10.17.1.0 - (1913217), [1] a816c00e-0199-66ae-10d3-00000f1fefc0, [2] P:\Users\danie\Documents\NetBeansProjects\ENSE600-Assign2-SkipBo\SkipBo_CardGame_GUI\javaDB, [3] jdk.internal.loader.ClassLoaders$AppClassLoader@3f99bd52, [4] file:/P:/Users/danie/Documents/NetBeansProjects/ENSE600-Assign2-SkipBo/SkipBo_CardGame_GUI/lib/derby/derby.jar
+Sun Sep 28 21:59:11 NZDT 2025:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.17.1.0 - (1913217): instance a816c00e-0199-8f8c-26d3-00000f88cc88 
+on database directory memory:P:\Users\danie\Documents\NetBeansProjects\ENSE600-Assign2-SkipBo\SkipBo_CardGame_GUI\TestDB with class loader jdk.internal.loader.ClassLoaders$AppClassLoader@70dea4e 
+Loaded from file:/P:/Users/danie/Documents/NetBeansProjects/ENSE600-Assign2-SkipBo/SkipBo_CardGame_GUI/lib/derby/derby.jar
 java.vendor=Oracle Corporation
 java.runtime.version=21.0.8+12-LTS-250
 user.dir=P:\Users\danie\Documents\NetBeansProjects\ENSE600-Assign2-SkipBo\SkipBo_CardGame_GUI
@@ -7,4 +10,4 @@ os.name=Windows 11
 os.arch=amd64
 os.version=10.0
 derby.system.home=null
-C005 : [0] 
+Database Class Loader started - derby.database.classpath=''

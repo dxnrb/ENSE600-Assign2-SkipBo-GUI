@@ -38,11 +38,7 @@ public class Derby {
     //--- DATABASE CALLS ---//
     
     public static void startDatabase() {
-        String url = "jdbc:derby:javaDB;create=true"; // "javaDB" will be created if missing
-        String username = "root";
-        String password = "010101";
-
-        try (Connection conn = DriverManager.getConnection(url, username, password)) {
+        try (Connection conn = getConnection()) {
             System.out.println("Connected to Derby database.");
             // Initialize schema (create tables if not already created)
             try (Statement stmt = conn.createStatement()) {
@@ -86,6 +82,220 @@ public class Derby {
             e.printStackTrace();
         }
     }
+    
+    private static Connection getConnection() throws SQLException {
+        String url = "jdbc:derby:javaDB;create=true"; // "javaDB" will be created if missing
+        String username = "root";
+        String password = "010101";
+        return DriverManager.getConnection(url, username, password);
+    }
+    
+    public static int getGameID() throws SQLException {
+        int gameID = -1;
+
+        String selectSql = "SELECT game_id FROM game_state ORDER BY created_at DESC FETCH FIRST ROW ONLY";
+
+        try (Connection conn = getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
+             ResultSet rs = selectStmt.executeQuery()) {
+
+            if (rs.next()) {
+                // Found an existing game, return its ID
+                gameID = rs.getInt("game_id");
+            }
+        }
+
+        return gameID;
+    }
+
+    public static String convertPileToJson(Object pile) {
+        if (pile == null) return "[]";
+
+        try {
+            if (pile instanceof ArrayList<?>) {
+                // Treat as building piles
+                return mapper.writeValueAsString(pile);
+            } else if (pile instanceof DrawPile) {
+                // Treat as draw pile
+                return mapper.writeValueAsString(((DrawPile) pile).getCards());
+            } else {
+                throw new IllegalArgumentException("Unsupported pile type: " + pile.getClass());
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "[]"; // fallback
+        }
+    }
+    
+    public static void closeDatabase() throws SQLException {
+        Connection conn = getConnection();
+    if (conn != null) {
+        try {
+            conn.close();
+            System.out.println("Database connection closed.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+    
+    
+    //--- READ METHODS ---//
+    
+    public static ArrayList<HashMap<String, Object>> readGameStates() throws SQLException {
+        ArrayList<HashMap<String, Object>> results = new ArrayList<>();
+
+        String sql = "SELECT game_id, player_count, current_turn, " +
+                     "game_completed, winning_player_id, updated_at " +
+                     "FROM game_state";
+
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                HashMap<String, Object> row = new HashMap<>();
+                row.put("game_id", rs.getInt("game_id"));
+                row.put("player_count", rs.getInt("player_count"));
+                
+                ArrayList<String> players = readPlayersForGame(rs.getInt("game_id"));
+                
+                int turnIndex = rs.getInt("current_turn");
+                if (turnIndex >= 0 && turnIndex < players.size()) {
+                    row.put("current_turn", players.get(turnIndex));
+                } else {
+                    row.put("current_turn", null);
+                }
+
+                row.put("game_completed", rs.getBoolean("game_completed"));
+
+                int winnerID = rs.getInt("winning_player_id");
+                
+                if (rs.wasNull()) {
+                    row.put("winning_player", null);
+                } else {
+                    row.put("winning_player", getPlayerNameByID(winnerID));
+                }
+
+                row.put("updated_at", rs.getTimestamp("updated_at"));
+                results.add(row);
+            }
+        }
+        return results;
+    }
+
+    public static HashMap<String, Object> readGameStateID(int gameID) throws SQLException, JsonProcessingException {
+        String sql = "SELECT * FROM game_state WHERE game_id = ?";
+        HashMap<String, Object> row = new HashMap<>();
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, gameID);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    row.put("game_id", rs.getInt("game_id"));
+                    row.put("player_count", rs.getInt("player_count"));
+                    row.put("current_turn", rs.getInt("current_turn"));
+                    row.put("game_completed", rs.getBoolean("game_completed"));
+
+                    int winnerId = rs.getInt("winning_player_id");
+                    row.put("winning_player_id", rs.wasNull() ? null : winnerId);
+
+                    // Deserialize building piles
+                    ArrayList<BuildingPile> buildingPiles = mapper.readValue(rs.getString("building_piles"), new TypeReference<ArrayList<BuildingPile>>(){});
+                    row.put("building_piles", buildingPiles);
+
+                    // Deserialize draw pile
+                    ArrayList<Card> drawPile = mapper.readValue(rs.getString("draw_pile"), new TypeReference<ArrayList<Card>>() {});
+                    row.put("draw_pile", drawPile);
+
+                    row.put("updated_at", rs.getTimestamp("updated_at"));
+                }
+            }
+        }
+
+        return row;
+    }
+
+    // Read players for a specific game_id
+    public static ArrayList<String> readPlayersForGame(int gameID) throws SQLException {
+        ArrayList<String> players = new ArrayList<>();
+
+        String sql = "SELECT player_name FROM players WHERE game_id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, gameID);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    players.add(rs.getString("player_name"));
+                }
+            }
+        }
+        return players;
+    }
+    
+    public static ArrayList<HashMap<String, Object>> readPlayersPilesForGame(int gameID) throws SQLException, JsonProcessingException {
+        String sql = "SELECT * FROM players WHERE game_id = ?";
+        ArrayList<HashMap<String, Object>> playerRows = new ArrayList<>();
+
+        try (Connection conn = getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, gameID);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    HashMap<String, Object> row = new HashMap<>();
+
+                    row.put("player_id", rs.getInt("player_id"));
+                    row.put("player_name", rs.getString("player_name"));
+
+                    // Hand
+                    ArrayList<Card> playerHand = mapper.readValue(rs.getString("hand"), new TypeReference<ArrayList<Card>>(){});
+                    row.put("player_hand", playerHand);
+
+                    // Stock pile
+                    ArrayList<Card> stockCards = mapper.readValue(rs.getString("stock_pile"), new TypeReference<ArrayList<Card>>(){});
+                    StockPile stockPile = new StockPile();
+                    for (Card card : stockCards) {
+                        stockPile.addCard(card);
+                    }
+                    row.put("stock_pile", stockPile);
+
+                    // Discard piles
+                    ArrayList<DiscardPile> discardPile = mapper.readValue(rs.getString("discard_piles"), new TypeReference<ArrayList<DiscardPile>>(){});
+                    row.put("discard_piles", discardPile);
+
+                    playerRows.add(row);
+                }
+            }
+        }
+
+        return playerRows;
+    }
+
+    public static String getPlayerNameByID(int playerId) throws SQLException {
+        String sql = "SELECT player_name FROM players WHERE player_id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, playerId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("player_name");
+                } else {
+                    return null; // no player with that ID
+                }
+            }
+        }
+    }
+
+    
+    //--- WRITE METHODS ---//
     
     public static void saveGame(int gameID, int playerCount, int currentTurn, boolean gameCompleted, Integer winningPlayerId, String buildingPilesJson, String drawPileJson) throws SQLException {
         String updateSql = "UPDATE game_state SET " +
@@ -147,18 +357,18 @@ public class Derby {
     public static void deleteGameAndPlayers(int gameID) throws SQLException {
         String deleteGameSql = "DELETE FROM game_state WHERE game_id = ?";
 
-        try (Connection connection = getConnection()) {
-            connection.setAutoCommit(false);
-            try (PreparedStatement stmtGame = connection.prepareStatement(deleteGameSql)) {
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmtGame = conn.prepareStatement(deleteGameSql)) {
                 stmtGame.setInt(1, gameID);
                 stmtGame.executeUpdate();
 
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         }
     }
@@ -229,224 +439,4 @@ public class Derby {
             }
         }
     }
-
-    
-    private static Connection getConnection() throws SQLException {
-        String url = "jdbc:derby:javaDB;create=true";
-        String username = "root";
-        String password = "010101";
-        return DriverManager.getConnection(url, username, password);
-    }
-    
-    public static int getGameID() throws SQLException {
-        int gameID = -1;
-
-        String selectSql = "SELECT game_id FROM game_state ORDER BY created_at DESC FETCH FIRST ROW ONLY";
-
-        try (Connection conn = getConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
-             ResultSet rs = selectStmt.executeQuery()) {
-
-            if (rs.next()) {
-                // Found an existing game, return its ID
-                gameID = rs.getInt("game_id");
-            }
-        }
-
-        return gameID;
-    }
-
-    public static String convertPileToJson(Object pile) {
-        if (pile == null) return "[]";
-
-        try {
-            if (pile instanceof ArrayList<?>) {
-                // Treat as building piles
-                return mapper.writeValueAsString(pile);
-            } else if (pile instanceof DrawPile) {
-                // Treat as draw pile
-                return mapper.writeValueAsString(((DrawPile) pile).getCards());
-            } else {
-                throw new IllegalArgumentException("Unsupported pile type: " + pile.getClass());
-            }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "[]"; // fallback
-        }
-    }
-    
-    public static void closeDatabase() throws SQLException {
-        Connection connection = getConnection();
-    if (connection != null) {
-        try {
-            connection.close();
-            System.out.println("Database connection closed.");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-}
-    
-    
-    //--- READ METHODS ---//
-    
-    public static ArrayList<HashMap<String, Object>> readGameStates() throws SQLException {
-        ArrayList<HashMap<String, Object>> results = new ArrayList<>();
-
-        String sql = "SELECT game_id, player_count, current_turn, " +
-                     "game_completed, winning_player_id, updated_at " +
-                     "FROM game_state";
-
-        try (Connection connection = getConnection();
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                HashMap<String, Object> row = new HashMap<>();
-                row.put("game_id", rs.getInt("game_id"));
-                row.put("player_count", rs.getInt("player_count"));
-                
-                ArrayList<String> players = readPlayersForGame(rs.getInt("game_id"));
-                
-                int turnIndex = rs.getInt("current_turn");
-                if (turnIndex >= 0 && turnIndex < players.size()) {
-                    row.put("current_turn", players.get(turnIndex));
-                } else {
-                    row.put("current_turn", null);
-                }
-
-                row.put("game_completed", rs.getBoolean("game_completed"));
-
-                int winnerID = rs.getInt("winning_player_id");
-                
-                if (rs.wasNull()) {
-                    row.put("winning_player", null);
-                } else {
-                    row.put("winning_player", getPlayerNameByID(winnerID));
-                }
-
-                row.put("updated_at", rs.getTimestamp("updated_at"));
-                results.add(row);
-            }
-        }
-        return results;
-    }
-
-    public static HashMap<String, Object> readGameStateID(int gameID) throws SQLException, JsonProcessingException {
-        String sql = "SELECT * FROM game_state WHERE game_id = ?";
-        HashMap<String, Object> row = new HashMap<>();
-
-        try (Connection connection = getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setInt(1, gameID);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    row.put("game_id", rs.getInt("game_id"));
-                    row.put("player_count", rs.getInt("player_count"));
-                    row.put("current_turn", rs.getInt("current_turn"));
-                    row.put("game_completed", rs.getBoolean("game_completed"));
-
-                    int winnerId = rs.getInt("winning_player_id");
-                    row.put("winning_player_id", rs.wasNull() ? null : winnerId);
-
-                    // Deserialize building piles
-                    ArrayList<BuildingPile> buildingPiles = mapper.readValue(rs.getString("building_piles"), new TypeReference<ArrayList<BuildingPile>>(){});
-                    row.put("building_piles", buildingPiles);
-
-                    // Deserialize draw pile
-                    ArrayList<Card> drawPile = mapper.readValue(rs.getString("draw_pile"), new TypeReference<ArrayList<Card>>() {});
-                    row.put("draw_pile", drawPile);
-
-                    row.put("updated_at", rs.getTimestamp("updated_at"));
-                }
-            }
-        }
-
-        return row;
-    }
-
-    
-    /** Read players for a specific game_id */
-    public static ArrayList<String> readPlayersForGame(int gameID) throws SQLException {
-        ArrayList<String> players = new ArrayList<>();
-
-        String sql = "SELECT player_name FROM players WHERE game_id = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, gameID);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    players.add(rs.getString("player_name"));
-                }
-            }
-        }
-        return players;
-    }
-    
-    public static ArrayList<HashMap<String, Object>> readPlayersPilesForGame(int gameID) throws SQLException, JsonProcessingException {
-        String sql = "SELECT * FROM players WHERE game_id = ?";
-        ArrayList<HashMap<String, Object>> playerRows = new ArrayList<>();
-
-        try (Connection conn = getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, gameID);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    HashMap<String, Object> row = new HashMap<>();
-
-                    row.put("player_id", rs.getInt("player_id"));
-                    row.put("player_name", rs.getString("player_name"));
-
-                    // Hand
-                    ArrayList<Card> playerHand = mapper.readValue(rs.getString("hand"), new TypeReference<ArrayList<Card>>(){});
-                    row.put("player_hand", playerHand);
-
-                    // Stock pile
-                    ArrayList<Card> stockCards = mapper.readValue(rs.getString("stock_pile"), new TypeReference<ArrayList<Card>>(){});
-                    StockPile stockPile = new StockPile();
-                    for (Card card : stockCards) {
-                        stockPile.addCard(card);
-                    }
-                    row.put("stock_pile", stockPile);
-
-                    // Discard piles
-                    ArrayList<DiscardPile> discardPile = mapper.readValue(rs.getString("discard_piles"), new TypeReference<ArrayList<DiscardPile>>(){});
-                    row.put("discard_piles", discardPile);
-
-                    playerRows.add(row);
-                }
-            }
-        }
-
-        return playerRows;
-    }
-
-
-    
-    public static String getPlayerNameByID(int playerId) throws SQLException {
-        String sql = "SELECT player_name FROM players WHERE player_id = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, playerId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("player_name");
-                } else {
-                    return null; // no player with that ID
-                }
-            }
-        }
-    }
-
-    
-    //--- WRITE METHODS ---//
-    
-    
 }
