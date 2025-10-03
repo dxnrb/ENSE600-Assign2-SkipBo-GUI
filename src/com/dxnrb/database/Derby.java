@@ -28,12 +28,7 @@ public class Derby {
     }
     
     private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-    // When you get back
-    // Look into Jackson (JSON library)
-    // Think about tables
-    // I reckon it will be easier to have a player table with foreign keys to a game table
-    // player table looks after cards in player hand, discard, and stock piles, plus their win rate
-    // game table looks after build piles, players, checks winners etc, game status etc
+
     
     //--- DATABASE CALLS ---//
     
@@ -67,7 +62,7 @@ public class Derby {
                         "game_id INT NOT NULL, " +
                         "player_name VARCHAR(100) NOT NULL, " +
                         "discard_piles CLOB, " +    // JSON array of discard piles
-                        "stock_pile CLOB, " +       // JSON object (cards in stock pile)
+                        "stock_pile CLOB, " +       // JSON array of cards in stock pile
                         "hand CLOB, " +             // JSON array of cards
                         "CONSTRAINT fk_game FOREIGN KEY (game_id) REFERENCES game_state(game_id) ON DELETE CASCADE" +
                         ")");
@@ -434,7 +429,7 @@ public class Derby {
             // Get generated player_id back
             try (ResultSet keys = insertStmt.getGeneratedKeys()) {
                 if (keys.next()) {
-                    player.setPlayerID(keys.getInt(1)); // store it in your Player object
+                    player.setPlayerID(keys.getInt(1)); // store it in Player
                 }
             }
         }

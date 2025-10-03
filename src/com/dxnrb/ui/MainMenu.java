@@ -119,7 +119,6 @@ public class MainMenu extends javax.swing.JFrame {
             ArrayList<HashMap<String, Object>> gameStates = Derby.readGameStates();
 
             for (HashMap<String, Object> row : gameStates) {
-                // Get players as a comma-separated string
                 ArrayList<String> playersList = Derby.readPlayersForGame((int) row.get("game_id"));
                 String players = "<html>" + String.join("<br>", playersList) + "</html>"; // ChatGPT wrote this line, I didn't know html had to be used to line break in a JTable
 
@@ -402,7 +401,7 @@ public class MainMenu extends javax.swing.JFrame {
         instructionsText.setColumns(20);
         instructionsText.setLineWrap(true);
         instructionsText.setRows(5);
-        instructionsText.setText("Objective:\nBe the first player to play all the cards in your STOCK pile.\n\nHow To Play:\nUsing your HAND, DISCARD, and STOCK pile, play cards to the BUILD pile.\n\nWhatever card played to a BUILD pile must be the next sequential number.\n\nYour DISCARD piles can be built in any order.\n\nYou can play from your DISCARD pile as many times as you like during your turn.\n\nPlaying your HAND to your DISCARD pile ends your turn.\n\nIf you use up all cards in your HAND during your turn, you replenish your HAND and keep playing.\n\nWildcards (0) can be played as any number 1 through 12.");
+        instructionsText.setText("Objective:\nBe the first player to play all the cards in your STOCK pile.\n\nHow To Play:\nUsing your HAND, DISCARD, and STOCK pile, play cards to the BUILD pile.\n\nWhatever card played to a BUILD pile must be the next sequential number.\n\nYour DISCARD piles can be built in any order.\n\nYou can play from your DISCARD pile as many times as you like during your turn.\n\nPlaying your HAND to your DISCARD pile ends your turn.\n\nIf you use up all cards in your HAND during your turn, you replenish your HAND and keep playing.\n\nWildcards (W) can be played as any number 1 through 12.\n");
         instructionsText.setWrapStyleWord(true);
         instructionsText.setFocusable(false);
 
@@ -653,15 +652,17 @@ public class MainMenu extends javax.swing.JFrame {
         scoreBoardLayout.setHorizontalGroup(
             scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(scoreBoardLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(scoreBoardHeader)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(exitButton_ScoreBoard)
+                .addGroup(scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(scoreBoardLayout.createSequentialGroup()
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(scoreBoardHeader)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(exitButton_ScoreBoard))
+                    .addGroup(scoreBoardLayout.createSequentialGroup()
+                        .addContainerGap(219, Short.MAX_VALUE)
+                        .addComponent(scoreBoardScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 234, Short.MAX_VALUE)))
                 .addContainerGap())
-            .addGroup(scoreBoardLayout.createSequentialGroup()
-                .addContainerGap(219, Short.MAX_VALUE)
-                .addComponent(scoreBoardScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(240, Short.MAX_VALUE))
         );
         scoreBoardLayout.setVerticalGroup(
             scoreBoardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

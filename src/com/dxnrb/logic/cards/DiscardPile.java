@@ -16,12 +16,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DiscardPile extends Pile implements CardAddable, CardRemovable, CardPeekable {
     
-//    protected int index;
-    
-    public DiscardPile() {
-//        this.index = index;
-    }
-    
     @Override
     public boolean addCard(Card card) {
         this.shoe.add(card);

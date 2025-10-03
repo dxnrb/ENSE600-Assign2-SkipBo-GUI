@@ -233,7 +233,7 @@
                 <Property name="columns" type="int" value="20"/>
                 <Property name="lineWrap" type="boolean" value="true"/>
                 <Property name="rows" type="int" value="5"/>
-                <Property name="text" type="java.lang.String" value="Objective:&#xa;Be the first player to play all the cards in your STOCK pile.&#xa;&#xa;How To Play:&#xa;Using your HAND, DISCARD, and STOCK pile, play cards to the BUILD pile.&#xa;&#xa;Whatever card played to a BUILD pile must be the next sequential number.&#xa;&#xa;Your DISCARD piles can be built in any order.&#xa;&#xa;You can play from your DISCARD pile as many times as you like during your turn.&#xa;&#xa;Playing your HAND to your DISCARD pile ends your turn.&#xa;&#xa;If you use up all cards in your HAND during your turn, you replenish your HAND and keep playing.&#xa;&#xa;Wildcards (0) can be played as any number 1 through 12."/>
+                <Property name="text" type="java.lang.String" value="Objective:&#xa;Be the first player to play all the cards in your STOCK pile.&#xa;&#xa;How To Play:&#xa;Using your HAND, DISCARD, and STOCK pile, play cards to the BUILD pile.&#xa;&#xa;Whatever card played to a BUILD pile must be the next sequential number.&#xa;&#xa;Your DISCARD piles can be built in any order.&#xa;&#xa;You can play from your DISCARD pile as many times as you like during your turn.&#xa;&#xa;Playing your HAND to your DISCARD pile ends your turn.&#xa;&#xa;If you use up all cards in your HAND during your turn, you replenish your HAND and keep playing.&#xa;&#xa;Wildcards (W) can be played as any number 1 through 12.&#xa;"/>
                 <Property name="wrapStyleWord" type="boolean" value="true"/>
                 <Property name="focusable" type="boolean" value="false"/>
               </Properties>
@@ -512,17 +512,21 @@
           <Layout>
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace max="32767" attributes="0"/>
-                      <Component id="scoreBoardHeader" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="32767" attributes="0"/>
-                      <Component id="exitButton_ScoreBoard" min="-2" max="-2" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace max="32767" attributes="0"/>
+                              <Component id="scoreBoardHeader" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
+                              <Component id="exitButton_ScoreBoard" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace pref="219" max="32767" attributes="0"/>
+                              <Component id="scoreBoardScrollPane" min="-2" pref="395" max="-2" attributes="0"/>
+                              <EmptySpace min="0" pref="234" max="32767" attributes="0"/>
+                          </Group>
+                      </Group>
                       <EmptySpace max="-2" attributes="0"/>
-                  </Group>
-                  <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace pref="219" max="32767" attributes="0"/>
-                      <Component id="scoreBoardScrollPane" min="-2" pref="395" max="-2" attributes="0"/>
-                      <EmptySpace pref="240" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>

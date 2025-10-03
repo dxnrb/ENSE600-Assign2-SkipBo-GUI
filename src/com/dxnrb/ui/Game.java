@@ -6,11 +6,12 @@ package com.dxnrb.ui;
 
 import com.dxnrb.database.Derby;
 import com.dxnrb.logic.GameManager;
+import com.dxnrb.logic.cards.BuildingPile;
 import com.dxnrb.logic.cards.Card;
 import com.dxnrb.logic.cards.DiscardPile;
 import com.dxnrb.logic.cards.EmptyCard;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.awt.Point;
+import java.awt.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,10 +54,7 @@ public class Game extends javax.swing.JFrame {
         gameManager = new GameManager(names); // Change ID parameter when doing database
 
         renderTable();
-        
-        // The Game JFrame should only focus on making calls to the game manager to update moves for a players turn
-        // This JFrame class (GUI) needs to be kept separate from the game logic
-        // Create methods in the game manager that the GUI event methods call on and react to whatever the game manager returns
+
     }
     // Overloaded for resuming games
     public Game(HashMap<String, Object> gameState) throws SQLException, JsonProcessingException {
@@ -81,8 +79,92 @@ public class Game extends javax.swing.JFrame {
         discardPileLabels[3] = new JLabel[] {dSlot4_CardBelow1, dSlot4_CardBelow2, dSlot4_CardBelow3};
         
         buildPiles = new JButton[] {buildPile1, buildPile2, buildPile3, buildPile4};
+        
+        // Set buttons to look like cards
+        for (JButton button : handPiles) {
+            button.setPreferredSize(new Dimension(60, 80));
+            button.setMinimumSize(new Dimension(60, 80));
+            button.setMaximumSize(new Dimension(60, 80));
+            button.setFont(button.getFont().deriveFont(Font.BOLD, 16f));
+        }
+        for (JButton button : discardPiles) {
+            button.setPreferredSize(new Dimension(60, 80));
+            button.setMinimumSize(new Dimension(60, 80));
+            button.setMaximumSize(new Dimension(60, 80));
+            button.setFont(button.getFont().deriveFont(Font.BOLD, 16f));
+        }
+        for (JButton button : buildPiles) {
+            button.setPreferredSize(new Dimension(60, 80));
+            button.setMinimumSize(new Dimension(60, 80));
+            button.setMaximumSize(new Dimension(60, 80));
+            button.setFont(button.getFont().deriveFont(Font.BOLD, 16f));
+        }
+        stockPile.setPreferredSize(new Dimension(60, 80));
+        stockPile.setMinimumSize(new Dimension(60, 80));
+        stockPile.setMaximumSize(new Dimension(60, 80));
+        stockPile.setFont(stockPile.getFont().deriveFont(Font.BOLD, 16f));
     }
+    
+    private void setButtonNumberAndColour(JButton button, Card card) {
+        if (card instanceof EmptyCard) {
+            button.setText("");
+            button.setEnabled(false);
+            button.setBackground(UIManager.getColor("Button.background"));
+            return;
+        }
 
+        int number = card.getCardNumber();
+        button.setEnabled(true);
+
+        // set text
+        if (number == 0) {
+            button.setText("W");
+        } else {
+            button.setText(Integer.toString(number));
+        }
+
+        // set background
+        if (number >= 1 && number <= 4) {
+            button.setBackground(Color.CYAN);
+        } else if (number >= 5 && number <= 8) {
+            button.setBackground(Color.GREEN);
+        } else if (number >= 9 && number <= 12) {
+            button.setBackground(new Color(255, 51, 51)); // custom red
+        } else if (number == 0) {
+            button.setBackground(Color.ORANGE);
+        } else {
+            button.setBackground(UIManager.getColor("Button.background"));
+        }
+    }
+    
+    // Overloaded for building piles as they dont show wildcards
+    private void setButtonNumberAndColour(JButton button, BuildingPile pile) {
+        if (pile.isEmpty()) {
+            button.setText("");
+            button.setEnabled(false);
+            button.setBackground(UIManager.getColor("Button.background"));
+            return;
+        }
+
+        int number = pile.getSize();
+        button.setEnabled(true);
+        button.setText(Integer.toString(number));
+
+
+        // set background
+        if (number >= 1 && number <= 4) {
+            button.setBackground(Color.CYAN);
+        } else if (number >= 5 && number <= 8) {
+            button.setBackground(Color.GREEN);
+        } else if (number >= 9 && number <= 12) {
+            button.setBackground(new Color(255, 51, 51)); // custom red
+        } else if (number == 0) {
+            button.setBackground(Color.ORANGE);
+        } else {
+            button.setBackground(UIManager.getColor("Button.background"));
+        }
+    }
+    
     private void renderTable() throws SQLException {
         // Update turn indicator
         playerNameIndicator.setText(gameManager.getCurrentPlayer().getPlayerName() + "'s Turn");
@@ -91,31 +173,23 @@ public class Game extends javax.swing.JFrame {
         int i = 0;
         for (JButton button : handPiles) {
             Card card = gameManager.getCurrentPlayerHand(i++);
-            if (card instanceof EmptyCard)
-            {
-                button.setText("Empty");
-                button.setEnabled(false);
-            } else {
-                button.setText(Integer.toString(card.getCardNumber()));
-                button.setEnabled(true);
-            }
+            setButtonNumberAndColour(button, card);
         }
         
         // Initialize GUI for players stock pile
         if (gameManager.getCurrentPlayerStockPile().getSize() != 0) {
             stockPile.setText(Integer.toString(gameManager.getCurrentPlayerStockPileCard().getCardNumber()));
             stockPileRemaining.setText("(" + gameManager.getCurrentPlayerStockPile().getSize() + ")");
+            setButtonNumberAndColour(stockPile, gameManager.getCurrentPlayerStockPileCard());
         }
         
         // Initialize GUI for players discard pile
         i = 0;
         for (JButton button : discardPiles) {
             if (gameManager.getCurrentPlayerDiscardPile(i).isEmpty()) {
-                button.setText("Empty");
-                button.setEnabled(false);
+                setButtonNumberAndColour(button, new EmptyCard());
             } else {
-                button.setText(Integer.toString(gameManager.getCurrentPlayerDiscardPile(i).peek().getCardNumber()));
-                button.setEnabled(true);
+                setButtonNumberAndColour(button, gameManager.getCurrentPlayerDiscardPile(i).peek());
             }
             // Render cards below discard pile
             ArrayList<Card> discardPile = gameManager.getCurrentPlayerDiscardPile(i).getCards();
@@ -136,9 +210,9 @@ public class Game extends javax.swing.JFrame {
         i = 0;
         for (JButton button : buildPiles) {
             if (gameManager.getBuildPile(i).isEmpty()) {
-                button.setText("Empty");
+                setButtonNumberAndColour(button, new EmptyCard());
             } else {
-                button.setText(Integer.toString(gameManager.getBuildPile(i).getSize()));
+                setButtonNumberAndColour(button, gameManager.getBuildPile(i));
             }
             i++;
         }
@@ -149,14 +223,15 @@ public class Game extends javax.swing.JFrame {
     
     
     // Methods to control GUI card flow
+    // Element enable/disable is basically input validation without needing a bunch of try-catchs
     private void resetActionState() {
         for (JButton button : handPiles) {
-            if (!"Empty".equals(button.getText())) {
+            if (!"".equals(button.getText())) {
                 button.setEnabled(true);
             }
         }
         for (JButton button : discardPiles) {
-            if (!"Empty".equals(button.getText())) {
+            if (!"".equals(button.getText())) {
                 button.setEnabled(true);
             } else {
                 button.setEnabled(false);
@@ -169,10 +244,15 @@ public class Game extends javax.swing.JFrame {
         selectedCard = new EmptyCard();
         currentAction = PlayerAction.NONE;
     }
-    private void selectHAND() {
+    private void selectHAND(JButton selectedButton) {
         currentAction = PlayerAction.SELECT_HAND;
         for (JButton button : handPiles) {
-            button.setEnabled(false);
+            if (selectedButton == button)
+            {
+                button.setEnabled(true);
+            } else {
+                button.setEnabled(false);
+            }
         }
         for (JButton button : discardPiles) {
             button.setEnabled(true);
@@ -309,6 +389,7 @@ public class Game extends javax.swing.JFrame {
         DiscardPiles = new javax.swing.JPanel();
         discardSlotBurner = new javax.swing.JPanel();
         discardPileLabel = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         discardSlot1 = new javax.swing.JPanel();
         discardPile1 = new javax.swing.JButton();
         dSlot1_CardBelow1 = new javax.swing.JLabel();
@@ -331,13 +412,10 @@ public class Game extends javax.swing.JFrame {
         dSlot4_CardBelow3 = new javax.swing.JLabel();
         StockPiles = new javax.swing.JPanel();
         stockPile = new javax.swing.JButton();
-        stockPileRemaining = new javax.swing.JLabel();
-        jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
         HandPiles = new javax.swing.JPanel();
         handSlot1 = new javax.swing.JPanel();
         handPile1 = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
         handSlot2 = new javax.swing.JPanel();
         handPile2 = new javax.swing.JButton();
         handSlot3 = new javax.swing.JPanel();
@@ -346,9 +424,13 @@ public class Game extends javax.swing.JFrame {
         handPile4 = new javax.swing.JButton();
         handSlot5 = new javax.swing.JPanel();
         handPile5 = new javax.swing.JButton();
+        StockPileLabelHolder = new javax.swing.JPanel();
+        stockPileLabel = new javax.swing.JLabel();
+        stockPileRemaining = new javax.swing.JLabel();
         playerNameIndicator = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setPreferredSize(new java.awt.Dimension(854, 480));
         setResizable(false);
         setSize(new java.awt.Dimension(854, 480));
 
@@ -360,6 +442,7 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
+        TableTop.setPreferredSize(new java.awt.Dimension(685, 305));
         TableTop.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 TableTopMouseClicked(evt);
@@ -384,9 +467,9 @@ public class Game extends javax.swing.JFrame {
         buildSlotBurnerLayout.setVerticalGroup(
             buildSlotBurnerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(buildSlotBurnerLayout.createSequentialGroup()
-                .addGap(40, 40, 40)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(BuildPileLabel)
-                .addContainerGap(41, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         BuildPiles.add(buildSlotBurner);
@@ -413,7 +496,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot1Layout.setVerticalGroup(
             buildSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 101, Short.MAX_VALUE)
+            .addGap(0, 100, Short.MAX_VALUE)
             .addGroup(buildSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot1Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -445,7 +528,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot2Layout.setVerticalGroup(
             buildSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 101, Short.MAX_VALUE)
+            .addGap(0, 100, Short.MAX_VALUE)
             .addGroup(buildSlot2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot2Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -477,7 +560,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot3Layout.setVerticalGroup(
             buildSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 101, Short.MAX_VALUE)
+            .addGap(0, 100, Short.MAX_VALUE)
             .addGroup(buildSlot3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot3Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -509,7 +592,7 @@ public class Game extends javax.swing.JFrame {
         );
         buildSlot4Layout.setVerticalGroup(
             buildSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 101, Short.MAX_VALUE)
+            .addGap(0, 100, Short.MAX_VALUE)
             .addGroup(buildSlot4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(buildSlot4Layout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -529,6 +612,9 @@ public class Game extends javax.swing.JFrame {
         discardPileLabel.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         discardPileLabel.setText("Discard Pile");
 
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel2.setText("Hand");
+
         javax.swing.GroupLayout discardSlotBurnerLayout = new javax.swing.GroupLayout(discardSlotBurner);
         discardSlotBurner.setLayout(discardSlotBurnerLayout);
         discardSlotBurnerLayout.setHorizontalGroup(
@@ -537,13 +623,19 @@ public class Game extends javax.swing.JFrame {
                 .addContainerGap(23, Short.MAX_VALUE)
                 .addComponent(discardPileLabel)
                 .addContainerGap(15, Short.MAX_VALUE))
+            .addGroup(discardSlotBurnerLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         discardSlotBurnerLayout.setVerticalGroup(
             discardSlotBurnerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(discardSlotBurnerLayout.createSequentialGroup()
-                .addGap(10, 10, 10)
+                .addContainerGap(10, Short.MAX_VALUE)
                 .addComponent(discardPileLabel)
-                .addContainerGap(76, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 49, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addContainerGap())
         );
 
         DiscardPiles.add(discardSlotBurner);
@@ -593,7 +685,7 @@ public class Game extends javax.swing.JFrame {
                 .addComponent(dSlot1_CardBelow2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(dSlot1_CardBelow3)
-                .addContainerGap(7, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot1);
@@ -641,7 +733,7 @@ public class Game extends javax.swing.JFrame {
                 .addComponent(dSlot2_CardBelow2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(dSlot2_CardBelow3)
-                .addContainerGap(7, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot2);
@@ -689,7 +781,7 @@ public class Game extends javax.swing.JFrame {
                 .addComponent(dSlot3_CardBelow2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(dSlot3_CardBelow3)
-                .addContainerGap(7, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot3);
@@ -737,7 +829,7 @@ public class Game extends javax.swing.JFrame {
                 .addComponent(dSlot4_CardBelow2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(dSlot4_CardBelow3)
-                .addContainerGap(7, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         DiscardPiles.add(discardSlot4);
@@ -757,42 +849,21 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
-        stockPileRemaining.setText("Remaining");
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel1.setText("Stock Pile");
-
         javax.swing.GroupLayout StockPilesLayout = new javax.swing.GroupLayout(StockPiles);
         StockPiles.setLayout(StockPilesLayout);
         StockPilesLayout.setHorizontalGroup(
             StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(StockPilesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(stockPileRemaining)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, StockPilesLayout.createSequentialGroup()
-                .addContainerGap(17, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addContainerGap(17, Short.MAX_VALUE))
-            .addGroup(StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(StockPilesLayout.createSequentialGroup()
-                    .addGap(0, 8, Short.MAX_VALUE)
-                    .addComponent(stockPile)
-                    .addGap(0, 7, Short.MAX_VALUE)))
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(stockPile)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         StockPilesLayout.setVerticalGroup(
             StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, StockPilesLayout.createSequentialGroup()
-                .addContainerGap(12, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addGap(37, 37, 37)
-                .addComponent(stockPileRemaining)
-                .addContainerGap(15, Short.MAX_VALUE))
-            .addGroup(StockPilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(StockPilesLayout.createSequentialGroup()
-                    .addGap(0, 37, Short.MAX_VALUE)
-                    .addComponent(stockPile)
-                    .addGap(0, 36, Short.MAX_VALUE)))
+            .addGroup(StockPilesLayout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(stockPile)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -812,34 +883,21 @@ public class Game extends javax.swing.JFrame {
             }
         });
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel2.setText("Hand");
-
         javax.swing.GroupLayout handSlot1Layout = new javax.swing.GroupLayout(handSlot1);
         handSlot1.setLayout(handSlot1Layout);
         handSlot1Layout.setHorizontalGroup(
             handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(handSlot1Layout.createSequentialGroup()
-                .addContainerGap(39, Short.MAX_VALUE)
-                .addComponent(jLabel2)
-                .addContainerGap(42, Short.MAX_VALUE))
-            .addGroup(handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(handSlot1Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(handPile1)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+                .addGap(0, 11, Short.MAX_VALUE)
+                .addComponent(handPile1)
+                .addGap(0, 11, Short.MAX_VALUE))
         );
         handSlot1Layout.setVerticalGroup(
             handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(handSlot1Layout.createSequentialGroup()
-                .addContainerGap(11, Short.MAX_VALUE)
-                .addComponent(jLabel2)
-                .addContainerGap(69, Short.MAX_VALUE))
-            .addGroup(handSlot1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(handSlot1Layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(handPile1)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(handPile1)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         HandPiles.add(handSlot1);
@@ -970,6 +1028,42 @@ public class Game extends javax.swing.JFrame {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         TableTop.add(HandPiles, gridBagConstraints);
 
+        StockPileLabelHolder.setPreferredSize(new java.awt.Dimension(100, 100));
+
+        stockPileLabel.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        stockPileLabel.setText("Stock Pile");
+
+        stockPileRemaining.setText("Remaining");
+
+        javax.swing.GroupLayout StockPileLabelHolderLayout = new javax.swing.GroupLayout(StockPileLabelHolder);
+        StockPileLabelHolder.setLayout(StockPileLabelHolderLayout);
+        StockPileLabelHolderLayout.setHorizontalGroup(
+            StockPileLabelHolderLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(StockPileLabelHolderLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(stockPileLabel)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(StockPileLabelHolderLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(stockPileRemaining)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        StockPileLabelHolderLayout.setVerticalGroup(
+            StockPileLabelHolderLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, StockPileLabelHolderLayout.createSequentialGroup()
+                .addContainerGap(61, Short.MAX_VALUE)
+                .addComponent(stockPileLabel)
+                .addGap(0, 0, 0)
+                .addComponent(stockPileRemaining)
+                .addGap(3, 3, 3))
+        );
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.PAGE_END;
+        TableTop.add(StockPileLabelHolder, gridBagConstraints);
+
         playerNameIndicator.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         playerNameIndicator.setText("Player 1's Turn");
 
@@ -1021,31 +1115,31 @@ public class Game extends javax.swing.JFrame {
     private void handPile1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile1ActionPerformed
         // TODO add your handling code here:
         selectedCard = gameManager.getCurrentPlayerHand(0);
-        selectHAND();
+        selectHAND(handPile1);
     }//GEN-LAST:event_handPile1ActionPerformed
 
     private void handPile2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile2ActionPerformed
         // TODO add your handling code here:
         selectedCard = gameManager.getCurrentPlayerHand(1);
-        selectHAND();
+        selectHAND(handPile2);
     }//GEN-LAST:event_handPile2ActionPerformed
 
     private void handPile3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile3ActionPerformed
         // TODO add your handling code here:
         selectedCard = gameManager.getCurrentPlayerHand(2);
-        selectHAND();
+        selectHAND(handPile3);
     }//GEN-LAST:event_handPile3ActionPerformed
 
     private void handPile4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile4ActionPerformed
         // TODO add your handling code here:
         selectedCard = gameManager.getCurrentPlayerHand(3);
-        selectHAND();
+        selectHAND(handPile4);
     }//GEN-LAST:event_handPile4ActionPerformed
 
     private void handPile5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_handPile5ActionPerformed
         // TODO add your handling code here:
         selectedCard = gameManager.getCurrentPlayerHand(4);
-        selectHAND();
+        selectHAND(handPile5);
     }//GEN-LAST:event_handPile5ActionPerformed
 
     private void stockPileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stockPileActionPerformed
@@ -1179,6 +1273,7 @@ public class Game extends javax.swing.JFrame {
     private javax.swing.JPanel BuildPiles;
     private javax.swing.JPanel DiscardPiles;
     private javax.swing.JPanel HandPiles;
+    private javax.swing.JPanel StockPileLabelHolder;
     private javax.swing.JPanel StockPiles;
     private javax.swing.JPanel TableTop;
     private javax.swing.JButton buildPile1;
@@ -1223,11 +1318,11 @@ public class Game extends javax.swing.JFrame {
     private javax.swing.JPanel handSlot3;
     private javax.swing.JPanel handSlot4;
     private javax.swing.JPanel handSlot5;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JLabel playerNameIndicator;
     private javax.swing.JButton stockPile;
+    private javax.swing.JLabel stockPileLabel;
     private javax.swing.JLabel stockPileRemaining;
     // End of variables declaration//GEN-END:variables
 }
